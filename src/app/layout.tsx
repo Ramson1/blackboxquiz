@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
+import { BRAND } from "@/lib/brand";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,16 +15,19 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(BRAND.website),
   title: {
     default: "BLACKBOX QUIZ",
     template: "%s | BLACKBOX QUIZ",
   },
-  description:
-    "Live two-team academic competition platform. A BlackBox Tech Product.",
+  description: `${BRAND.tagline}. ${BRAND.app} is the live two-team academic competition platform for schools, universities, and organizations. Contact: ${BRAND.email}`,
   applicationName: "BLACKBOX QUIZ",
+  authors: [{ name: BRAND.company, url: BRAND.website }],
+  creator: BRAND.company,
+  publisher: BRAND.company,
   manifest: "/manifest.webmanifest",
   icons: {
-    icon: "/icon.png",
+    icon: ["/favicon.ico", "/icon.png"],
     apple: "/apple-touch-icon.png",
   },
   appleWebApp: {

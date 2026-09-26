@@ -5,6 +5,7 @@ import { loadLiveState } from "@/services/live/live-service";
 import { requireUser } from "@/features/auth/session";
 import { Scoreboard } from "@/components/live/scoreboard";
 import { AudienceBoard } from "@/components/live/audience-board";
+import { BrandFooter } from "@/components/brand";
 import { pointColorFor } from "@/lib/validation/questions";
 
 export const metadata: Metadata = { title: "Scoreboard" };
@@ -79,9 +80,7 @@ export default async function CompetitionScoreboardPage({
           </p>
         )}
 
-        <p className="text-center text-xs text-muted-foreground">
-          Designed &amp; Developed by BlackBox Tech
-        </p>
+        <BrandFooter />
       </div>
     </AudienceBoard>
   );

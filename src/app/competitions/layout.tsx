@@ -1,4 +1,3 @@
-import { Trophy } from "lucide-react";
 import { effectiveRole, requireUser } from "@/features/auth/session";
 import {
   DashboardShell,
@@ -6,7 +5,7 @@ import {
 } from "@/components/dashboard/shell";
 
 const NAV: NavItem[] = [
-  { label: "Competitions", href: "/competitions", icon: Trophy },
+  { label: "Competitions", href: "/competitions", icon: "trophy" },
 ];
 
 export default async function CompetitionsLayout({

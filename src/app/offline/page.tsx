@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { WifiOff } from "lucide-react";
 import { RetryButton } from "@/app/offline/retry-button";
+import { BrandFooter } from "@/components/brand";
 
 export const metadata: Metadata = { title: "Offline" };
 
@@ -21,9 +22,7 @@ export default function OfflinePage() {
         playable. This page needs a connection. Reconnect and try again.
       </p>
       <RetryButton />
-      <p className="mt-6 text-xs text-muted-foreground">
-        Designed &amp; Developed by BlackBox Tech
-      </p>
+      <BrandFooter className="mt-6" />
     </div>
   );
 }

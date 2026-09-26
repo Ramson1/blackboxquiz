@@ -6,6 +6,7 @@ import { requireUser, effectiveRole } from "@/features/auth/session";
 import { getCompetition } from "@/services/competitions/competition-service";
 import { listRecentEvents } from "@/services/live/live-service";
 import { RealtimeMonitor } from "@/components/admin/realtime-monitor";
+import { BrandFooter } from "@/components/brand";
 import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = { title: "Live monitor" };
@@ -61,9 +62,7 @@ export default async function CompetitionMonitorPage({
 
       <RealtimeMonitor competitionId={id} seedEvents={events} />
 
-      <p className="text-center text-xs text-muted-foreground">
-        Designed &amp; Developed by BlackBox Tech
-      </p>
+      <BrandFooter />
     </div>
   );
 }

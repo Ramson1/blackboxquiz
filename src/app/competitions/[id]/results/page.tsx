@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Trophy } from "lucide-react";
+import { BrandFooter } from "@/components/brand";
+import { BRAND } from "@/lib/brand";
 import { requireUser } from "@/features/auth/session";
 import {
   getCompetition,
@@ -55,15 +57,14 @@ export default async function CompetitionResultsPage({
           />
         </div>
         <p className="hidden text-sm text-muted-foreground print:block">
-          {organizationName} — Designed &amp; Developed by BlackBox Tech
+          {organizationName} — {BRAND.tagline} · {BRAND.websiteLabel} ·{" "}
+          {BRAND.email}
         </p>
       </div>
 
       <ResultsView results={results} competitionName={competition.name} />
 
-      <p className="text-center text-xs text-muted-foreground">
-        Designed &amp; Developed by BlackBox Tech
-      </p>
+      <BrandFooter />
     </div>
   );
 }

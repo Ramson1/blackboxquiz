@@ -10,6 +10,7 @@ import {
   Rocket,
   Users,
 } from "lucide-react";
+import { BrandFooter } from "@/components/brand";
 import type { LiveState } from "@/features/engine/types";
 import { pointColorFor } from "@/lib/validation/questions";
 import {
@@ -269,9 +270,7 @@ export function LiveConsoleView({
         />
       )}
 
-      <p className="text-center text-xs text-muted-foreground">
-        Designed &amp; Developed by BlackBox Tech
-      </p>
+      <BrandFooter />
 
       <RevealDialog
         reveal={reveal}

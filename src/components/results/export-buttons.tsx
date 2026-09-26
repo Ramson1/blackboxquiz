@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { FileSpreadsheet, Printer, Table2 } from "lucide-react";
 import { toast } from "sonner";
+import { BRAND } from "@/lib/brand";
 import type { CompetitionResults } from "@/features/results/types";
 import {
   buildWorkbook,
@@ -33,7 +34,7 @@ export function ExportButtons({
     competitionName,
     organizationName,
     dateLabel: new Date().toLocaleDateString(),
-    branding: "Designed & Developed by BlackBox Tech",
+    branding: `${BRAND.tagline} — ${BRAND.websiteLabel} · ${BRAND.email}`,
   };
 
   const slug =

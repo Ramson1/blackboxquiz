@@ -3,16 +3,37 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import {
+  Building2,
+  Circle,
+  LayoutDashboard,
+  Menu,
+  Trophy,
+  Users,
+  X,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-import { BrandFooter } from "@/components/brand";
+import { BlackBoxLogo, BrandFooter } from "@/components/brand";
 import { Button } from "@/components/ui/button";
 import { signOutAction } from "@/features/auth/actions";
+
+/**
+ * Icon keys are plain strings so server layouts can pass `nav` into this
+ * client component — React components aren't serializable across the boundary.
+ */
+const NAV_ICONS = {
+  dashboard: LayoutDashboard,
+  organizations: Building2,
+  trophy: Trophy,
+  users: Users,
+} as const;
+
+export type NavIcon = keyof typeof NAV_ICONS;
 
 export type NavItem = {
   label: string;
   href: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: NavIcon;
 };
 
 export function DashboardShell({
@@ -34,19 +55,25 @@ export function DashboardShell({
       {nav.map((item) => {
         const active =
           pathname === item.href || pathname.startsWith(item.href + "/");
+        const Icon = NAV_ICONS[item.icon] ?? Circle;
         return (
           <Link
             key={item.href}
             href={item.href}
             onClick={() => setOpen(false)}
             className={cn(
-              "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              "group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
               active
-                ? "bg-primary text-primary-foreground"
+                ? "bg-primary/10 text-primary font-semibold shadow-xs"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
           >
-            <item.icon className="h-4 w-4" />
+            <Icon
+              className={cn(
+                "h-4 w-4 transition-colors",
+                active && "text-primary"
+              )}
+            />
             {item.label}
           </Link>
         );
@@ -58,12 +85,12 @@ export function DashboardShell({
     <div className="flex min-h-svh flex-1">
       {/* Desktop sidebar */}
       <aside className="hidden w-60 shrink-0 flex-col border-r bg-sidebar lg:flex">
-        <div className="flex h-14 items-center gap-2 border-b px-4">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-black text-[10px] font-black text-white dark:bg-white dark:text-black">
-            BX
-          </span>
+        <div className="flex h-14 items-center gap-2.5 border-b px-4">
+          <BlackBoxLogo className="h-8 w-8 rounded-lg" />
           <div className="leading-tight">
-            <p className="text-sm font-black tracking-tight">BLACKBOX QUIZ</p>
+            <p className="text-sm font-black tracking-tight">
+              BLACKBOX <span className="text-primary">QUIZ</span>
+            </p>
             <p className="text-[10px] text-muted-foreground">{areaLabel}</p>
           </div>
         </div>
@@ -83,7 +110,12 @@ export function DashboardShell({
           />
           <aside className="absolute inset-y-0 left-0 flex w-64 flex-col bg-background shadow-xl">
             <div className="flex h-14 items-center justify-between border-b px-4">
-              <p className="text-sm font-black">BLACKBOX QUIZ</p>
+              <div className="flex items-center gap-2">
+                <BlackBoxLogo className="h-7 w-7 rounded-lg" />
+                <p className="text-sm font-black">
+                  BLACKBOX <span className="text-primary">QUIZ</span>
+                </p>
+              </div>
               <Button
                 variant="ghost"
                 size="icon"
@@ -103,7 +135,7 @@ export function DashboardShell({
 
       {/* Main column */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 items-center gap-3 border-b px-4">
+        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur-md lg:bg-background/60">
           <Button
             variant="ghost"
             size="icon"
@@ -120,6 +152,14 @@ export function DashboardShell({
                 {user.role.replaceAll("_", " ")}
               </p>
             </div>
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary ring-1 ring-primary/20">
+              {user.name
+                .split(/\s+/)
+                .map((part) => part[0])
+                .slice(0, 2)
+                .join("")
+                .toUpperCase() || "?"}
+            </span>
             <form action={signOutAction}>
               <Button type="submit" variant="outline" size="sm">
                 Sign out

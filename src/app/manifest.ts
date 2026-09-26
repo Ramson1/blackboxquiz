@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { BRAND } from "@/lib/brand";
 
 /**
  * PWA web app manifest (spec §55, §30 offline-first). Served at
@@ -9,8 +10,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "BLACKBOX QUIZ",
     short_name: "BB Quiz",
-    description:
-      "Offline-first two-team academic competition platform. A BlackBox Tech Product.",
+    description: `${BRAND.tagline}. Offline-first two-team academic competition platform — ${BRAND.websiteLabel}, ${BRAND.email}`,
     id: "/",
     start_url: "/",
     scope: "/",
@@ -22,13 +22,13 @@ export default function manifest(): MetadataRoute.Manifest {
     icons: [
       {
         src: "/icon.png",
-        sizes: "1024x1024",
+        sizes: "512x512",
         type: "image/png",
         purpose: "any",
       },
       {
         src: "/icon-512.png",
-        sizes: "1024x1024",
+        sizes: "512x512",
         type: "image/png",
         purpose: "maskable",
       },

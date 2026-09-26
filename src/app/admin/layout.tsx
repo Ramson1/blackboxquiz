@@ -1,4 +1,3 @@
-import { Building2, LayoutDashboard, Trophy, Users } from "lucide-react";
 import { requireRole } from "@/features/auth/session";
 import { effectiveRole } from "@/features/auth/session";
 import {
@@ -7,10 +6,10 @@ import {
 } from "@/components/dashboard/shell";
 
 const NAV: NavItem[] = [
-  { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-  { label: "Organizations", href: "/admin/organizations", icon: Building2 },
-  { label: "Competitions", href: "/admin/competitions", icon: Trophy },
-  { label: "Users", href: "/admin/users", icon: Users },
+  { label: "Dashboard", href: "/admin/dashboard", icon: "dashboard" },
+  { label: "Organizations", href: "/admin/organizations", icon: "organizations" },
+  { label: "Competitions", href: "/admin/competitions", icon: "trophy" },
+  { label: "Users", href: "/admin/users", icon: "users" },
 ];
 
 export default async function AdminLayout({

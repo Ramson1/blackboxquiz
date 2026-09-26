@@ -5,7 +5,7 @@
 //   - Navigations: network-first, fall back to the cached shell for offline.
 //   - Static assets (_next/static, images, fonts): cache-first (immutable).
 //   - Same-origin API/auth/supabase calls: never cached (network passthrough).
-const VERSION = "blackboxquiz-v1";
+const VERSION = "blackboxquiz-v2";
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
 const OFFLINE_URL = "/offline";

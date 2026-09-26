@@ -9,8 +9,8 @@ import { Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { updatePasswordAction } from "@/features/auth/actions";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 
 const schema = z
   .object({
@@ -97,9 +97,8 @@ export function ResetPasswordForm() {
     >
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="password">New password</Label>
-        <Input
+        <PasswordInput
           id="password"
-          type="password"
           autoComplete="new-password"
           disabled={pending}
           {...register("password")}
@@ -111,9 +110,8 @@ export function ResetPasswordForm() {
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="confirm">Confirm new password</Label>
-        <Input
+        <PasswordInput
           id="confirm"
-          type="password"
           autoComplete="new-password"
           disabled={pending}
           {...register("confirm")}

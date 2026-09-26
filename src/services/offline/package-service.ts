@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { BRAND } from "@/lib/brand";
 import { getCompetition } from "@/services/competitions/competition-service";
 import { listQuestions } from "@/services/questions/question-service";
 import { listPointValues } from "@/services/teams/point-value-service";
@@ -102,7 +103,7 @@ export async function buildFullPackage(
     })),
     branding: {
       appName: "BlackBox Quiz",
-      footer: "Designed & Developed by BlackBox Tech",
+      footer: `${BRAND.tagline} — ${BRAND.websiteLabel} · ${BRAND.email}`,
       organizationName: org?.name ?? null,
       organizationLogoUrl: org?.logo_url ?? null,
     },
