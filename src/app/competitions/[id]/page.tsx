@@ -38,7 +38,12 @@ export default async function CompetitionDetailPage({
   const [summary, locked, readiness] = await Promise.all([
     getCompetitionSummary(id),
     hasActiveLock(id),
-    validateCompetitionStart(id),
+    // Never hard-crash the page if the validation RPC fails (e.g. schema not
+    // applied yet); surface the error as a readiness issue instead.
+    validateCompetitionStart(id).catch((e: unknown) => ({
+      ok: false,
+      issues: [e instanceof Error ? e.message : "Validation unavailable"],
+    })),
   ]);
 
   return (

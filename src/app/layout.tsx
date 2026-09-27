@@ -17,11 +17,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(BRAND.website),
   title: {
-    default: "BLACKBOX QUIZ",
-    template: "%s | BLACKBOX QUIZ",
+    default: "Black-Box — Competition Software",
+    template: "%s | Black-Box",
   },
-  description: `${BRAND.tagline}. ${BRAND.app} is the live two-team academic competition platform for schools, universities, and organizations. Contact: ${BRAND.email}`,
-  applicationName: "BLACKBOX QUIZ",
+  description: `${BRAND.tagline}. Black-Box is the live two-team academic competition platform for schools, universities, and organizations. Contact: ${BRAND.email}`,
+  applicationName: "Black-Box",
   authors: [{ name: BRAND.company, url: BRAND.website }],
   creator: BRAND.company,
   publisher: BRAND.company,
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "BLACKBOX QUIZ",
+    title: "Black-Box",
   },
 };
 

@@ -1,74 +1,38 @@
 import Link from "next/link";
-import { ArrowRight, Mail, ShieldCheck, Wifi, Zap } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
 import { BlackBoxLogo, BrandFooter } from "@/components/brand";
-import { BRAND } from "@/lib/brand";
 
 export default function Home() {
   return (
-    <main className="relative flex flex-1 flex-col items-center justify-center gap-10 overflow-hidden p-8 text-center">
+    <main className="relative flex flex-1 flex-col items-center justify-center gap-14 overflow-hidden p-8 text-center">
       {/* Ambient glow behind the hero */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute left-1/2 top-[-120px] h-[440px] w-[760px] -translate-x-1/2 rounded-full bg-primary/15 blur-3xl" />
+        <div className="absolute left-1/2 top-[-120px] h-[460px] w-[780px] -translate-x-1/2 rounded-full bg-primary/15 blur-3xl" />
       </div>
 
-      <div className="flex flex-col items-center gap-5">
-        <BlackBoxLogo className="h-20 w-20 rounded-3xl shadow-xl shadow-primary/25" />
-        <h1 className="text-5xl font-black tracking-tight text-balance sm:text-7xl">
-          BLACKBOX{" "}
-          <span className="bg-gradient-to-r from-primary via-sky-500 to-primary bg-clip-text text-transparent">
-            QUIZ
-          </span>
+      <div className="flex flex-col items-center gap-6">
+        <BlackBoxLogo className="h-24 w-24 rounded-3xl shadow-xl shadow-primary/25" />
+        <h1 className="text-6xl font-black tracking-tight text-balance sm:text-8xl">
+          BLACK-BOX
         </h1>
-        <p className="max-w-lg text-balance text-base text-muted-foreground sm:text-lg">
-          The live two-team academic competition platform for schools,
-          universities, and organizations — built for flawless events, even
-          offline.
+        <p className="text-xl font-semibold uppercase tracking-[0.35em] text-primary sm:text-2xl">
+          Competition Software
         </p>
-        <div className="mt-1 flex flex-wrap items-center justify-center gap-2 text-xs font-medium">
-          {[
-            { icon: Wifi, label: "Offline-first" },
-            { icon: Zap, label: "Real-time scoring" },
-            { icon: ShieldCheck, label: "Secure & audited" },
-          ].map((chip) => (
-            <span
-              key={chip.label}
-              className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1.5 text-muted-foreground shadow-xs"
-            >
-              <chip.icon className="size-3.5 text-primary" />
-              {chip.label}
-            </span>
-          ))}
-        </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-center gap-3">
-        <Button size="lg" render={<Link href="/login" />}>
-          Sign in
-          <ArrowRight data-slot="icon" />
-        </Button>
-        <Button
-          size="lg"
-          variant="outline"
-          render={
-            <a
-              href={BRAND.website}
-              target="_blank"
-              rel="noopener noreferrer"
-            />
-          }
-        >
-          {BRAND.websiteLabel}
-        </Button>
-        <Button
-          size="lg"
-          variant="ghost"
-          render={<a href={`mailto:${BRAND.email}`} />}
-        >
-          <Mail data-slot="icon" />
-          Contact us
-        </Button>
-      </div>
+      {/* The single, bold entry point into the competition screens.
+          Unauthenticated visitors are redirected through login by the proxy. */}
+      <Link
+        href="/competitions"
+        className="group relative inline-flex items-center gap-4 rounded-2xl bg-gradient-to-r from-primary via-sky-500 to-primary bg-[length:200%_100%] px-12 py-6 text-2xl font-extrabold uppercase tracking-widest text-primary-foreground shadow-2xl shadow-primary/40 transition-all duration-300 hover:-translate-y-1 hover:bg-[position:100%_0] hover:shadow-primary/60 active:translate-y-0 sm:text-3xl"
+      >
+        <span
+          aria-hidden
+          className="absolute -inset-1 -z-10 rounded-3xl bg-gradient-to-r from-primary via-sky-500 to-primary bg-[length:200%_100%] opacity-40 blur-lg transition-all duration-300 group-hover:opacity-70 group-hover:bg-[position:100%_0]"
+        />
+        Enter Competition Screens
+        <ArrowRight className="size-7 transition-transform duration-300 group-hover:translate-x-1.5" />
+      </Link>
 
       <footer className="absolute bottom-6">
         <BrandFooter />

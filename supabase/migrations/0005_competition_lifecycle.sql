@@ -240,13 +240,13 @@ begin
     v_issues := v_issues || ('Exactly 2 teams required (found ' || v_teams || ')');
   end if;
   if v_nameless > 0 then
-    v_issues := v_issues || 'Every team must have a name';
+    v_issues := v_issues || ARRAY['Every team must have a name'];
   end if;
 
   select count(*) into v_questions
   from public.blackboxquiz_questions where competition_id = p_competition_id;
   if v_questions = 0 then
-    v_issues := v_issues || 'No questions uploaded';
+    v_issues := v_issues || ARRAY['No questions uploaded'];
   end if;
 
   select count(*) into v_bad_options
@@ -277,7 +277,7 @@ begin
   end if;
 
   if comp.default_time_limit is null or comp.default_time_limit <= 0 then
-    v_issues := v_issues || 'Timer configuration is invalid';
+    v_issues := v_issues || ARRAY['Timer configuration is invalid'];
   end if;
 
   select exists (
@@ -285,7 +285,7 @@ begin
     where competition_id = p_competition_id and locked = true
   ) into v_locked;
   if v_locked then
-    v_issues := v_issues || 'Competition is locked';
+    v_issues := v_issues || ARRAY['Competition is locked'];
   end if;
 
   return jsonb_build_object(

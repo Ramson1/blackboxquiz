@@ -3,7 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import {
+  addOrganizationMember,
   createOrganization,
+  removeOrganizationMember,
+  updateMemberRole,
   updateOrganization,
   updateUserRole,
   updateUserStatus,
@@ -15,7 +18,11 @@ import {
 import { emergencyLock } from "@/services/admin/lock-service";
 import { requireUser } from "@/features/auth/session";
 import { logAudit } from "@/services/admin/audit";
-import { APP_ROLES, type AppRole } from "@/lib/permissions/roles";
+import {
+  APP_ROLES,
+  ORG_MEMBER_ROLES,
+  type AppRole,
+} from "@/lib/permissions/roles";
 
 export type AdminActionResult = { ok: true } | { ok: false; error: string };
 
@@ -203,5 +210,103 @@ export async function emergencyLockAction(input: {
       ok: false,
       error: e instanceof Error ? e.message : "Could not lock competition.",
     };
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Organization members — assigning users to organizations. Authorization is
+// enforced by RLS on blackboxquiz_organization_members (super admin or the
+// org's admin); these actions surface the failure as a toast-friendly error.
+// ----------------------------------------------------------------------------
+
+const addMemberSchema = z.object({
+  organizationId: z.uuid(),
+  userId: z.uuid(),
+  role: z.enum(ORG_MEMBER_ROLES),
+});
+
+export async function addOrganizationMemberAction(
+  input: unknown
+): Promise<AdminActionResult> {
+  await requireUser();
+  const parsed = addMemberSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0].message };
+  }
+  try {
+    await addOrganizationMember(parsed.data);
+    await logAudit({
+      organizationId: parsed.data.organizationId,
+      action: "ORG_MEMBER_ADDED",
+      entityType: "organization_member",
+      entityId: parsed.data.userId,
+      newValue: { role: parsed.data.role },
+    });
+    revalidatePath(`/admin/organizations/${parsed.data.organizationId}`);
+    return { ok: true };
+  } catch (e) {
+    return {
+      ok: false,
+      error:
+        e instanceof Error
+          ? e.message
+          : "Could not assign the user to this organization.",
+    };
+  }
+}
+
+const memberRoleSchema = z.object({
+  organizationId: z.uuid(),
+  memberId: z.uuid(),
+  role: z.enum(ORG_MEMBER_ROLES),
+});
+
+export async function updateMemberRoleAction(
+  input: unknown
+): Promise<AdminActionResult> {
+  await requireUser();
+  const parsed = memberRoleSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0].message };
+  }
+  try {
+    await updateMemberRole(parsed.data.memberId, parsed.data.role);
+    await logAudit({
+      organizationId: parsed.data.organizationId,
+      action: "ORG_MEMBER_ROLE_CHANGED",
+      entityType: "organization_member",
+      entityId: parsed.data.memberId,
+      newValue: { role: parsed.data.role },
+    });
+    revalidatePath(`/admin/organizations/${parsed.data.organizationId}`);
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "Could not change the member role." };
+  }
+}
+
+const removeMemberSchema = z.object({
+  organizationId: z.uuid(),
+  memberId: z.uuid(),
+});
+
+export async function removeOrganizationMemberAction(
+  input: unknown
+): Promise<AdminActionResult> {
+  await requireUser();
+  const parsed = removeMemberSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Invalid member." };
+  try {
+    await removeOrganizationMember(parsed.data.memberId);
+    await logAudit({
+      organizationId: parsed.data.organizationId,
+      action: "ORG_MEMBER_REMOVED",
+      entityType: "organization_member",
+      entityId: parsed.data.memberId,
+    });
+    revalidatePath(`/admin/organizations/${parsed.data.organizationId}`);
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "Could not remove the member." };
   }
 }

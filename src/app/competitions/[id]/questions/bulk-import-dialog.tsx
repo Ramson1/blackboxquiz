@@ -3,10 +3,11 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { AlertTriangle, CheckCircle2, FileUp, Upload } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Download, FileSpreadsheet, FileUp, FileText, Upload } from "lucide-react";
 import { bulkImportQuestionsAction } from "@/features/questions/actions";
 import {
   IMPORT_TEMPLATE_CSV,
+  importTemplateXlsx,
   parseQuestionFile,
 } from "@/features/questions/parse-import";
 import {
@@ -28,8 +29,9 @@ interface ValidatedRow {
   error: string | null;
 }
 
-function download(filename: string, text: string) {
-  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+function download(filename: string, data: string | Blob, type?: string) {
+  const blob =
+    typeof data === "string" ? new Blob([data], { type }) : data;
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -126,11 +128,12 @@ export function BulkImportDialog({
             <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed p-10 text-center hover:bg-muted/50">
               <FileUp className="size-8 text-muted-foreground" />
               <span className="font-medium">
-                {parsing ? "Parsing…" : "Choose a CSV or XLSX file"}
+                {parsing ? "Parsing…" : "Choose a CSV or Excel file"}
               </span>
               <span className="text-xs text-muted-foreground">
-                Columns: question, option_a…option_d, correct_answer, points,
-                category, difficulty, time_limit, explanation
+                Download the template below, fill in your questions (one per
+                row), then upload it here. Every row is validated and previewed
+                before anything is imported.
               </span>
               <input
                 type="file"
@@ -144,14 +147,37 @@ export function BulkImportDialog({
                 }}
               />
             </label>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-fit"
-              onClick={() => download("question-template.csv", IMPORT_TEMPLATE_CSV)}
-            >
-              Download template
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  download(
+                    "question-template.csv",
+                    IMPORT_TEMPLATE_CSV,
+                    "text/csv;charset=utf-8"
+                  )
+                }
+              >
+                <FileText />
+                Download CSV template
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  download("question-template.xlsx", importTemplateXlsx())
+                }
+              >
+                <FileSpreadsheet />
+                Download Excel template
+              </Button>
+            </div>
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Download className="size-3.5" />
+              Tip: correct_answer accepts the option letter (A–D) or the exact
+              option text. Leave option_c/option_d empty for 2-option questions.
+            </p>
           </div>
         ) : (
           <div className="flex flex-col gap-3">

@@ -8,6 +8,7 @@ import {
   Circle,
   LayoutDashboard,
   Menu,
+  MonitorPlay,
   Trophy,
   Users,
   X,
@@ -26,6 +27,7 @@ const NAV_ICONS = {
   organizations: Building2,
   trophy: Trophy,
   users: Users,
+  workspace: MonitorPlay,
 } as const;
 
 export type NavIcon = keyof typeof NAV_ICONS;

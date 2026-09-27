@@ -7,9 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-geist-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -136,5 +136,37 @@
   }
   ::selection {
     background: color-mix(in oklab, var(--primary) 25%, transparent);
+  }
+  /* Manual polish: crisp headings, comfortable line rhythm. */
+  h1, h2, h3 {
+    @apply text-balance tracking-tight;
+    text-wrap: balance;
+  }
+  /* Slim, themed scrollbars (WebKit/Blink + Firefox). */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--muted-foreground) 35%, transparent) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--muted-foreground) 30%, transparent);
+    border-radius: 8px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklab, var(--muted-foreground) 55%, transparent);
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  /* Table rows: subtle hover to keep dense admin grids scannable. */
+  tbody tr {
+    transition: background-color 120ms ease;
+  }
+  tbody tr:hover {
+    background: color-mix(in oklab, var(--muted) 55%, transparent);
   }
 }

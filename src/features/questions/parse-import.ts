@@ -46,12 +46,21 @@ function rowToDraft(raw: Record<string, unknown>): QuestionDraft {
   const row: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(raw)) row[k.trim().toLowerCase()] = v;
 
+  const points = toInt(cell(row, "points"));
   const options = DEFAULT_OPTION_KEYS.map((key) => ({
     key,
     text: cell(row, `option_${key.toLowerCase()}`),
   })).filter((o) => o.text.length > 0);
 
-  const points = toInt(cell(row, "points"));
+  // correct_answer may be an option key ("B") or the option text itself.
+  const correctRaw = cell(row, "correct_answer");
+  const correctUpper = correctRaw.toUpperCase();
+  let correctKey = correctUpper.charAt(0);
+  if (!DEFAULT_OPTION_KEYS.includes(correctKey as (typeof DEFAULT_OPTION_KEYS)[number])) {
+    const byText = options.find((o) => o.text.toUpperCase() === correctUpper);
+    if (byText) correctKey = byText.key;
+  }
+
   return {
     question_text: cell(row, "question"),
     category: cell(row, "category"),
@@ -60,7 +69,7 @@ function rowToDraft(raw: Record<string, unknown>): QuestionDraft {
     point_color: pointColorFor(points ?? 0),
     time_limit: toInt(cell(row, "time_limit")) ?? 30,
     explanation: cell(row, "explanation"),
-    correct_key: cell(row, "correct_answer").toUpperCase().charAt(0),
+    correct_key: correctKey,
     options,
   };
 }
@@ -124,8 +133,8 @@ export function questionsToCsv(
   });
 }
 
-/** A ready-to-download template so admins know the expected shape. */
-export const IMPORT_TEMPLATE_CSV = questionsToCsv([
+/** Example rows used to build both downloadable templates. */
+const TEMPLATE_ROWS: Record<string, string | number>[] = [
   {
     question: "Which planet is known as the Red Planet?",
     option_a: "Venus",
@@ -139,4 +148,33 @@ export const IMPORT_TEMPLATE_CSV = questionsToCsv([
     time_limit: 30,
     explanation: "Iron oxide gives Mars its reddish appearance.",
   },
-]);
+  {
+    question: "Who authored the novel 'Things Fall Apart'?",
+    option_a: "Chinua Achebe",
+    option_b: "Wole Soyinka",
+    option_c: "",
+    option_d: "",
+    correct_answer: "A",
+    points: 200,
+    category: "Literature",
+    difficulty: "Medium",
+    time_limit: 45,
+    explanation: "Published in 1958 by Chinua Achebe.",
+  },
+];
+
+/** A ready-to-download CSV template so admins know the expected shape. */
+export const IMPORT_TEMPLATE_CSV = questionsToCsv(TEMPLATE_ROWS);
+
+/** Build an Excel-friendly .xlsx template Blob client-side (same columns). */
+export function importTemplateXlsx(): Blob {
+  const sheet = XLSX.utils.json_to_sheet(TEMPLATE_ROWS, {
+    header: [...EXPECTED_COLUMNS],
+  });
+  const book = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(book, sheet, "Questions");
+  const out = XLSX.write(book, { bookType: "xlsx", type: "array" });
+  return new Blob([out], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+}

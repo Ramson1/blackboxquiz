@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { listOrganizations } from "@/services/admin/admin-service";
 import {
   Table,
@@ -56,7 +57,14 @@ export default async function OrganizationsPage() {
             )}
             {orgs.map((org) => (
               <TableRow key={org.id}>
-                <TableCell className="font-medium">{org.name}</TableCell>
+                <TableCell className="font-medium">
+                  <Link
+                    href={`/admin/organizations/${org.id}`}
+                    className="hover:text-primary hover:underline"
+                  >
+                    {org.name}
+                  </Link>
+                </TableCell>
                 <TableCell className="text-muted-foreground">{org.slug}</TableCell>
                 <TableCell>
                   <Badge className={STATUS_VARIANT[org.status]}>

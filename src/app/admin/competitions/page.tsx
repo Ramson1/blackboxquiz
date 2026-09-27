@@ -3,7 +3,9 @@ import Link from "next/link";
 import {
   getLockedCompetitionIds,
   listAllCompetitionsForAdmin,
+  listManagedOrganizations,
 } from "@/services/competitions/competition-service";
+import { CreateCompetitionDialog } from "@/app/competitions/create-dialog";
 import {
   Table,
   TableBody,
@@ -19,18 +21,22 @@ import { format } from "date-fns";
 export const metadata: Metadata = { title: "All Competitions" };
 
 export default async function AdminCompetitionsPage() {
-  const [competitions, lockedIds] = await Promise.all([
+  const [competitions, lockedIds, organizations] = await Promise.all([
     listAllCompetitionsForAdmin(),
     getLockedCompetitionIds(),
+    listManagedOrganizations(),
   ]);
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Competitions</h1>
-        <p className="text-sm text-muted-foreground">
-          Every competition across all organizations.
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Competitions</h1>
+          <p className="text-sm text-muted-foreground">
+            Every competition across all organizations.
+          </p>
+        </div>
+        <CreateCompetitionDialog organizations={organizations} />
       </div>
 
       <div className="rounded-xl border bg-card">

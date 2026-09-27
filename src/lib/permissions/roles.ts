@@ -9,6 +9,16 @@ export const APP_ROLES = [
 
 export type AppRole = (typeof APP_ROLES)[number];
 
+/** Roles assignable within an organization (matches members CHECK constraint). */
+export const ORG_MEMBER_ROLES = [
+  "ORGANIZATION_ADMIN",
+  "COMPETITION_ADMIN",
+  "COMPETITION_OPERATOR",
+  "VIEWER",
+] as const;
+
+export type OrgMemberRole = (typeof ORG_MEMBER_ROLES)[number];
+
 /** Fine-grained permissions grantable through competition access codes (spec §9). */
 export const ACCESS_PERMISSIONS = [
   "UPLOAD_QUESTIONS",
