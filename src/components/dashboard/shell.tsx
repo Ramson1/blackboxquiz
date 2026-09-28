@@ -7,6 +7,7 @@ import {
   Building2,
   Circle,
   LayoutDashboard,
+  Link2,
   Menu,
   MonitorPlay,
   Trophy,
@@ -28,6 +29,7 @@ const NAV_ICONS = {
   trophy: Trophy,
   users: Users,
   workspace: MonitorPlay,
+  link: Link2,
 } as const;
 
 export type NavIcon = keyof typeof NAV_ICONS;

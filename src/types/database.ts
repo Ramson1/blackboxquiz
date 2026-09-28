@@ -166,6 +166,22 @@ export interface AccessCode {
   revoked_at: string | null;
 }
 
+/** Admin-issued public setup invite (migration 0012). The bcrypt hash and
+ * token are never both exposed; lists use this safe projection. */
+export interface SetupInvite {
+  id: string;
+  organization_id: string;
+  token: string;
+  label: string | null;
+  competition_id: string | null;
+  status: "ACTIVE" | "USED" | "REVOKED";
+  expires_at: string | null;
+  created_by: string | null;
+  used_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface SyncRecord {
   id: string;
   competition_id: string;

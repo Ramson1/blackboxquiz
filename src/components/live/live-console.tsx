@@ -69,6 +69,8 @@ export function LiveConsoleView({
   contentMap,
   pointColors,
   allowBonus,
+  exitHref,
+  hideResults = false,
 }: {
   engine: LiveEngineApi;
   competitionId: string;
@@ -76,6 +78,10 @@ export function LiveConsoleView({
   contentMap: LiveContentMap;
   pointColors: Record<string, string>;
   allowBonus: boolean;
+  /** Overrides the admin-workspace exit/results links (public run screens). */
+  exitHref?: string;
+  /** Hides the results/back links on the completed screen (public runs). */
+  hideResults?: boolean;
 }) {
   const [reveal, setReveal] = useState<RevealInfo | null>(null);
   const state = engine.state;
@@ -149,7 +155,7 @@ export function LiveConsoleView({
           variant="ghost"
           size="sm"
           className="-ml-2 text-muted-foreground"
-          render={<Link href={`/competitions/${competitionId}`} />}
+          render={<Link href={exitHref ?? `/competitions/${competitionId}`} />}
         >
           Exit live console
         </Button>
@@ -234,7 +240,12 @@ export function LiveConsoleView({
       )}
 
       {!state.locked && state.status === "COMPLETED" && (
-        <CompletedView state={state} competitionId={competitionId} />
+        <CompletedView
+          state={state}
+          competitionId={competitionId}
+          exitHref={exitHref}
+          hideResults={hideResults}
+        />
       )}
 
       {!state.locked && !paused && state.status === "LIVE" && active && activeContent && activeQuestion && (
@@ -328,9 +339,13 @@ function StartScreen({
 function CompletedView({
   state,
   competitionId,
+  exitHref,
+  hideResults = false,
 }: {
   state: LiveState;
   competitionId: string;
+  exitHref?: string;
+  hideResults?: boolean;
 }) {
   const [a, b] = state.teams;
   const winner =
@@ -368,16 +383,20 @@ function CompletedView({
           ))}
         </div>
         <div className="flex gap-2">
+          {!hideResults && (
+            <Button
+              variant="outline"
+              render={<Link href={`/competitions/${competitionId}/results`} />}
+            >
+              View full results
+            </Button>
+          )}
           <Button
-            variant="outline"
-            render={<Link href={`/competitions/${competitionId}/results`} />}
+            render={
+              <Link href={exitHref ?? `/competitions/${competitionId}`} />
+            }
           >
-            View full results
-          </Button>
-          <Button
-            render={<Link href={`/competitions/${competitionId}`} />}
-          >
-            Back to competition
+            {exitHref ? "Exit" : "Back to competition"}
           </Button>
         </div>
       </CardContent>

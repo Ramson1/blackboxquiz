@@ -5,7 +5,7 @@
 //   - Navigations: network-first, fall back to the cached shell for offline.
 //   - Static assets (_next/static, images, fonts): cache-first (immutable).
 //   - Same-origin API/auth/supabase calls: never cached (network passthrough).
-const VERSION = "blackboxquiz-v2";
+const VERSION = "blackboxquiz-v3";
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
 const OFFLINE_URL = "/offline";
@@ -55,6 +55,13 @@ function isSupabaseOrApi(url) {
   );
 }
 
+// Public per-school flows: never put their HTML in the shell cache, or one
+// school's setup/run page could resurface on a shared device (and the cache
+// would grow unbounded with tokens/competition ids).
+function isPublicFlowPage(url) {
+  return url.pathname.startsWith("/setup/") || url.pathname.startsWith("/run/");
+}
+
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
@@ -69,8 +76,10 @@ self.addEventListener("fetch", (event) => {
       (async () => {
         try {
           const res = await fetch(req);
-          const cache = await caches.open(SHELL_CACHE);
-          cache.put(req, res.clone());
+          if (!isPublicFlowPage(url)) {
+            const cache = await caches.open(SHELL_CACHE);
+            cache.put(req, res.clone());
+          }
           return res;
         } catch {
           const cached = await caches.match(req);

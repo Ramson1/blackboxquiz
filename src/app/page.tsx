@@ -1,38 +1,38 @@
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import { BlackBoxLogo, BrandFooter } from "@/components/brand";
+import { StartCompetitionDialog } from "@/components/public/start-competition";
 
+/**
+ * Home screen (public): brand splash + the single entry point. Students and
+ * hosts only need one action — Start Competition (title + admin password).
+ * Server-side auth redirects live in src/proxy.ts; this page stays static so
+ * it keeps working offline and inside the PWA shell precache. Admins use
+ * /login directly — no sign-in affordance here on purpose.
+ */
 export default function Home() {
   return (
-    <main className="relative flex flex-1 flex-col items-center justify-center gap-14 overflow-hidden p-8 text-center">
-      {/* Ambient glow behind the hero */}
+    <main className="relative flex flex-1 flex-col items-center justify-center gap-10 overflow-hidden p-8 text-center">
+      {/* Vibrant ambient wash: slow-drifting gradient blobs over the base glow. */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute left-1/2 top-[-120px] h-[460px] w-[780px] -translate-x-1/2 rounded-full bg-primary/15 blur-3xl" />
+        <div className="absolute left-1/2 top-[-140px] h-[460px] w-[780px] -translate-x-1/2 rounded-full bg-primary/15 blur-3xl" />
+        <div className="absolute -left-24 bottom-[-120px] h-[380px] w-[380px] animate-pulse rounded-full bg-sky-400/15 blur-3xl [animation-duration:6s]" />
+        <div className="absolute -right-24 top-1/3 h-[340px] w-[340px] animate-pulse rounded-full bg-fuchsia-500/12 blur-3xl [animation-duration:8s]" />
       </div>
 
-      <div className="flex flex-col items-center gap-6">
-        <BlackBoxLogo className="h-24 w-24 rounded-3xl shadow-xl shadow-primary/25" />
-        <h1 className="text-6xl font-black tracking-tight text-balance sm:text-8xl">
+      <div className="flex flex-col items-center gap-5">
+        <BlackBoxLogo className="h-20 w-20 rounded-3xl shadow-xl shadow-primary/25" />
+        <h1 className="text-5xl font-black tracking-tight text-balance sm:text-7xl">
           BLACK-BOX
         </h1>
-        <p className="text-xl font-semibold uppercase tracking-[0.35em] text-primary sm:text-2xl">
+        <p className="text-lg font-semibold uppercase tracking-[0.35em] text-primary sm:text-xl">
           Competition Software
+        </p>
+        <p className="max-w-md text-sm text-balance text-muted-foreground sm:text-base">
+          Two teams. One board. A thousand points on the line — bring the
+          buzzers, we&apos;ll handle the rest. ⚡
         </p>
       </div>
 
-      {/* The single, bold entry point into the competition screens.
-          Unauthenticated visitors are redirected through login by the proxy. */}
-      <Link
-        href="/competitions"
-        className="group relative inline-flex items-center gap-4 rounded-2xl bg-gradient-to-r from-primary via-sky-500 to-primary bg-[length:200%_100%] px-12 py-6 text-2xl font-extrabold uppercase tracking-widest text-primary-foreground shadow-2xl shadow-primary/40 transition-all duration-300 hover:-translate-y-1 hover:bg-[position:100%_0] hover:shadow-primary/60 active:translate-y-0 sm:text-3xl"
-      >
-        <span
-          aria-hidden
-          className="absolute -inset-1 -z-10 rounded-3xl bg-gradient-to-r from-primary via-sky-500 to-primary bg-[length:200%_100%] opacity-40 blur-lg transition-all duration-300 group-hover:opacity-70 group-hover:bg-[position:100%_0]"
-        />
-        Enter Competition Screens
-        <ArrowRight className="size-7 transition-transform duration-300 group-hover:translate-x-1.5" />
-      </Link>
+      <StartCompetitionDialog />
 
       <footer className="absolute bottom-6">
         <BrandFooter />
