@@ -127,6 +127,8 @@ export function LiveConsoleView({
     : null;
   const currentTeam =
     state.teams.find((t) => t.id === state.currentTeamId) ?? state.teams[0];
+  const otherTeam =
+    state.teams.find((t) => t.id !== currentTeam?.id) ?? null;
 
   const paused = state.status === "PAUSED";
 
@@ -274,7 +276,15 @@ export function LiveConsoleView({
       {!state.locked && !paused && state.status === "LIVE" && !active && (
         <QuestionPicker
           questions={state.questions}
-          currentTeamName={currentTeam?.name ?? ""}
+          currentTeam={{
+            name: currentTeam?.name ?? "",
+            color: currentTeam?.color ?? "#64748b",
+          }}
+          otherTeam={
+            otherTeam
+              ? { name: otherTeam.name, color: otherTeam.color }
+              : null
+          }
           colorFor={colorFor}
           disabled={false}
           onSelect={(qid) => engine.select(qid)}

@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import {
   Check,
   ChevronLeft,
+  FileDown,
+  FileUp,
+  Loader2,
   Pencil,
   Plus,
   ShieldCheck,
@@ -15,6 +18,10 @@ import {
   setupCheckAction,
   setupCompleteAction,
 } from "@/features/public/actions";
+import {
+  downloadTemplateDocx,
+  parseDocxFile,
+} from "@/features/questions/parse-docx";
 import {
   DEFAULT_OPTION_KEYS,
   pointColorFor,
@@ -50,7 +57,7 @@ const EMPTY_DRAFT: SetupDraft = {
   title: "",
   teamOne: "",
   teamTwo: "",
-  timePerQuestion: 15,
+  timePerQuestion: 20,
   questions: [],
 };
 
@@ -108,6 +115,81 @@ export function PublicSetupWizard({ token }: { token: string }) {
   // Question editor state.
   const [question, setQuestion] = useState<QuestionEditor>(blankQuestion());
   const [editIndex, setEditIndex] = useState<number | null>(null);
+
+  // Bulk .docx import state.
+  const docxInputRef = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
+  const [bulkIssues, setBulkIssues] = useState<string[]>([]);
+
+  async function handleTemplateDownload() {
+    try {
+      await downloadTemplateDocx();
+    } catch {
+      toast.error("Could not build the Word template.");
+    }
+  }
+
+  /** PARSE → VALIDATE → APPEND: rows failing the shared form schema are
+   * reported inline instead of silently dropped (spec §46 pipeline). */
+  async function handleDocxFile(file: File) {
+    setImporting(true);
+    try {
+      const { questions, issues } = await parseDocxFile(file);
+      const problems = [...issues];
+      const room = 200 - draft.questions.length;
+      const accepted: PublicSetupQuestion[] = [];
+      for (const q of questions) {
+        if (accepted.length >= room) {
+          problems.push(
+            `Reached the 200-question cap — "${q.question_text.slice(0, 60)}" and later questions were skipped`
+          );
+          break;
+        }
+        const payload: PublicSetupQuestion = {
+          question_text: q.question_text,
+          points: q.points,
+          point_color: pointColorFor(q.points),
+          time_limit: draft.timePerQuestion,
+          correct_key: q.correct_key,
+          options: q.options.map((o, i) => ({
+            key: o.key,
+            text: o.text,
+            display_order: i + 1,
+          })),
+        };
+        const parsed = questionFormSchema.safeParse({
+          question_text: payload.question_text,
+          points: payload.points,
+          time_limit: payload.time_limit,
+          correct_key: payload.correct_key,
+          options: payload.options,
+        });
+        if (!parsed.success) {
+          problems.push(
+            `"${q.question_text.slice(0, 60)}": ${parsed.error.issues[0]?.message ?? "invalid row"}`
+          );
+          continue;
+        }
+        accepted.push(payload);
+      }
+      if (accepted.length > 0) {
+        setDraft((d) => ({ ...d, questions: [...d.questions, ...accepted] }));
+        toast.success(
+          `Imported ${accepted.length} question${accepted.length === 1 ? "" : "s"}`
+        );
+      } else if (problems.length === 0) {
+        toast.error("No questions found — open the template and follow its format.");
+      }
+      setBulkIssues(problems);
+    } catch (err) {
+      setBulkIssues([
+        err instanceof Error ? err.message : "Could not read this .docx file.",
+      ]);
+      toast.error("Import failed");
+    } finally {
+      setImporting(false);
+    }
+  }
 
   function checkPassword() {
     setGateError(null);
@@ -369,7 +451,7 @@ export function PublicSetupWizard({ token }: { token: string }) {
                 onChange={(e) =>
                   setDraft((d) => ({
                     ...d,
-                    timePerQuestion: Number(e.target.value) || 15,
+                    timePerQuestion: Number(e.target.value) || 20,
                   }))
                 }
                 className="w-32"
@@ -403,6 +485,66 @@ export function PublicSetupWizard({ token }: { token: string }) {
 
       {step === 2 && (
         <>
+          <Card className="mb-4">
+            <div className="flex flex-col gap-3">
+              <div>
+                <h2 className="text-lg font-bold">Bulk upload</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Many questions at once? Download the Word template, write one
+                  block per question (question, options, correct answer,
+                  points), then upload your .docx here — everything is filled
+                  in automatically and you can still edit any question below.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleTemplateDownload}
+                  disabled={importing}
+                >
+                  <FileDown />
+                  Download template (.docx)
+                </Button>
+                <input
+                  ref={docxInputRef}
+                  type="file"
+                  accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = "";
+                    if (file) void handleDocxFile(file);
+                  }}
+                />
+                <Button
+                  type="button"
+                  onClick={() => docxInputRef.current?.click()}
+                  disabled={importing}
+                >
+                  {importing ? <Loader2 className="animate-spin" /> : <FileUp />}
+                  {importing ? "Reading document…" : "Upload questions (.docx)"}
+                </Button>
+              </div>
+              {bulkIssues.length > 0 && (
+                <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+                  <p className="font-semibold">
+                    Could not import {bulkIssues.length} line
+                    {bulkIssues.length === 1 ? "" : "s"}:
+                  </p>
+                  <ul className="mt-1 list-disc space-y-1 pl-5">
+                    {bulkIssues.slice(0, 8).map((issue, i) => (
+                      <li key={i}>{issue}</li>
+                    ))}
+                    {bulkIssues.length > 8 && (
+                      <li>…and {bulkIssues.length - 8} more</li>
+                    )}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </Card>
+
           <Card>
             <div className="flex flex-col gap-4">
               <div>

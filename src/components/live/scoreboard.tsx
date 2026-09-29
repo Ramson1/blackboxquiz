@@ -91,31 +91,62 @@ export function Scoreboard({
       <div className="grid grid-cols-2 gap-3">
         {teams.map((t) => {
           const active = t.id === currentTeamId;
+          const live = status === "LIVE" || status === "PAUSED";
           return (
             <div
               key={t.id}
               className={cn(
-                "relative overflow-hidden rounded-xl border-2 bg-card p-4 transition-all",
-                active ? "shadow-lg" : "opacity-90"
+                "relative overflow-hidden rounded-xl border-2 p-4 transition-all duration-300",
+                active
+                  ? live
+                    ? "scale-[1.02] shadow-xl"
+                    : "shadow-lg"
+                  : "bg-card opacity-70"
               )}
-              style={{ borderColor: t.color }}
+              style={
+                active
+                  ? {
+                      borderColor: t.color,
+                      backgroundColor: `${t.color}1f`,
+                      boxShadow: `0 14px 36px -14px ${t.color}99`,
+                    }
+                  : { borderColor: `${t.color}59` }
+              }
             >
               <div
                 className="absolute inset-y-0 left-0 w-1.5"
                 style={{ backgroundColor: t.color }}
               />
-              <div className="flex flex-col gap-1 pl-2">
-                <div className="flex items-center gap-2">
-                  <span className="truncate font-bold">{t.name}</span>
+              {active && live && (
+                <div
+                  className="absolute inset-x-0 top-0 h-1"
+                  style={{ backgroundColor: t.color }}
+                />
+              )}
+              <div className="flex flex-col gap-1.5 pl-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={cn("truncate font-bold", active && "text-lg")}
+                    style={active ? { color: t.color } : undefined}
+                  >
+                    {t.name}
+                  </span>
                   {active && (
-                    <span className="rounded bg-primary px-1.5 py-0.5 text-[10px] font-bold uppercase text-primary-foreground">
-                      Their turn
+                    <span
+                      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-white"
+                      style={{ backgroundColor: t.color }}
+                    >
+                      <span className="size-1.5 animate-ping rounded-full bg-white" />
+                      On turn
                     </span>
                   )}
                 </div>
                 <span
-                  className="text-4xl font-black tabular-nums"
-                  style={{ color: t.color }}
+                  className={cn(
+                    "text-4xl font-black tabular-nums",
+                    !active && "text-foreground"
+                  )}
+                  style={active ? { color: t.color } : undefined}
                 >
                   {t.currentScore.toLocaleString()}
                 </span>

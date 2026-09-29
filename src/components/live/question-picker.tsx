@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Check, Lock } from "lucide-react";
+import { Check, Lock, MousePointerClick } from "lucide-react";
 import type { EngineQuestion } from "@/features/engine/types";
 import { cn } from "cn";
 
@@ -14,20 +14,25 @@ const ON_SCREEN = new Set([
   "BONUS_ANSWERING",
 ]);
 
+type TeamInfo = { name: string; color: string };
+
 /**
  * Question picker board (spec §27). Grouped by point value, colored per tier,
  * with the point number shown prominently (never color alone). Only AVAILABLE
- * questions are selectable; completed questions are disabled.
+ * questions are selectable; completed questions are disabled. The board opens
+ * with an unmistakable full-width turn banner in the choosing team's color.
  */
 export function QuestionPicker({
   questions,
-  currentTeamName,
+  currentTeam,
+  otherTeam,
   colorFor,
   disabled,
   onSelect,
 }: {
   questions: EngineQuestion[];
-  currentTeamName: string;
+  currentTeam: TeamInfo;
+  otherTeam: TeamInfo | null;
   colorFor: (points: number) => string;
   disabled: boolean;
   onSelect: (questionId: string) => void;
@@ -51,13 +56,44 @@ export function QuestionPicker({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Question board
-        </p>
-        <p className="text-sm text-muted-foreground">
-          {currentTeamName} selects • {remaining} remaining
-        </p>
+      {/* Turn banner: the choosing team owns the board right now */}
+      <div
+        className="relative overflow-hidden rounded-2xl p-5 text-white sm:p-6"
+        style={{
+          backgroundImage: `linear-gradient(135deg, ${currentTeam.color}, ${currentTeam.color}c4)`,
+          boxShadow: `0 18px 44px -18px ${currentTeam.color}99`,
+        }}
+      >
+        <MousePointerClick
+          aria-hidden
+          className="pointer-events-none absolute -right-4 -top-4 size-32 rotate-12 opacity-15"
+        />
+        <div className="relative flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-4">
+            <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white/20 ring-2 ring-white/40">
+              <MousePointerClick className="size-7" />
+            </span>
+            <div>
+              <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.25em] text-white/80">
+                <span className="size-2 animate-ping rounded-full bg-white" />
+                Your turn to pick
+              </p>
+              <p className="text-3xl font-black leading-tight tracking-tight sm:text-4xl">
+                {currentTeam.name}
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-1 text-right">
+            <span className="rounded-full bg-white/20 px-3.5 py-1.5 text-sm font-black ring-1 ring-white/40">
+              {remaining} left
+            </span>
+            {otherTeam && (
+              <span className="text-xs font-medium text-white/75">
+                then {otherTeam.name}&apos;s turn
+              </span>
+            )}
+          </div>
+        </div>
       </div>
 
       {tiers.map((tier) => (
