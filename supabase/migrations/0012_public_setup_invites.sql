@@ -91,7 +91,7 @@ $$;
 create or replace function public.blackboxquiz_verify_invite_credentials(p_token text, p_password text)
 returns public.blackboxquiz_setup_invites
 language plpgsql
-security definer set search_path = public
+security definer set search_path = public, extensions
 as $$
 declare
   v_invite public.blackboxquiz_setup_invites;
@@ -128,7 +128,7 @@ $$;
 create or replace function public.blackboxquiz_verify_invite_for_competition(p_competition_id uuid, p_password text)
 returns public.blackboxquiz_setup_invites
 language plpgsql
-security definer set search_path = public
+security definer set search_path = public, extensions
 as $$
 declare
   v_invite public.blackboxquiz_setup_invites;
@@ -170,7 +170,7 @@ create or replace function public.blackboxquiz_create_setup_invite(
 )
 returns jsonb
 language plpgsql
-security definer set search_path = public
+security definer set search_path = public, extensions
 as $$
 declare
   v_id uuid;
@@ -436,7 +436,7 @@ $$;
 create or replace function public.blackboxquiz_public_start(p_title text, p_password text)
 returns jsonb
 language plpgsql
-security definer set search_path = public
+security definer set search_path = public, extensions
 as $$
 declare
   v_cand record;

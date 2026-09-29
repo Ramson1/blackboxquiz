@@ -13,7 +13,7 @@ create or replace function public.blackboxquiz_create_access_code(
 )
 returns text
 language plpgsql
-security definer set search_path = public
+security definer set search_path = public, extensions
 as $$
 declare
   alphabet constant text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; -- no I/O/0/1
@@ -65,7 +65,7 @@ create or replace function public.blackboxquiz_validate_access_code(
 )
 returns jsonb
 language plpgsql
-security definer set search_path = public
+security definer set search_path = public, extensions
 as $$
 declare
   v_hash text;
