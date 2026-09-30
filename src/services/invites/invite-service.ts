@@ -3,10 +3,10 @@ import type { SetupInvite } from "@/types/database";
 
 /**
  * Setup-invite data access (migration 0012). Admin-created links that let a
- * non-authenticated user configure a competition at /setup/<token>. Passwords
- * are stored only as bcrypt hashes; the plaintext is returned exactly once at
- * creation. Listing relies on the manager-select RLS policy and never reads
- * the password_hash column.
+ * non-authenticated user configure a competition at /setup/<token>. Verification
+ * uses the bcrypt password_hash; a plaintext copy is also persisted (0015) so
+ * managers can retrieve/copy an invite's password later. Listing relies on the
+ * manager-select RLS policy and never reads the password_hash column.
  */
 
 export interface NewSetupInvite {
@@ -21,7 +21,7 @@ export async function listSetupInvites(): Promise<SetupInvite[]> {
   const { data, error } = await supabase
     .from("blackboxquiz_setup_invites")
     .select(
-      "id, organization_id, token, label, competition_id, status, expires_at, created_by, used_at, created_at, updated_at"
+      "id, organization_id, token, label, competition_id, status, expires_at, password_plain, created_by, used_at, created_at, updated_at"
     )
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);

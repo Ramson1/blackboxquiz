@@ -5,6 +5,7 @@ import {
   Ban,
   Check,
   Copy,
+  KeyRound,
   Link2,
   MoreHorizontal,
   Pencil,
@@ -140,8 +141,7 @@ function RevealInviteDialog({
             <ShieldCheck className="size-5" /> Password ready
           </DialogTitle>
           <DialogDescription>
-            Share both now — this password is shown only once and cannot be
-            retrieved later.
+            Share both now. You can copy them again later from the invite list.
           </DialogDescription>
         </DialogHeader>
         {data && (
@@ -360,8 +360,8 @@ function EditInviteDialog({
               autoComplete="new-password"
             />
             <p className="text-xs text-muted-foreground">
-              Existing passwords are stored hashed and can&apos;t be read back —
-              set a new one to copy it.
+              Leave blank to keep the current password. Set a new one to change
+              it — you can copy the current password any time from the menu.
             </p>
           </div>
 
@@ -436,6 +436,21 @@ export function InviteActionsMenu({ invite }: { invite: SetupInvite }) {
             }}
           >
             <Copy /> Copy link
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => {
+              if (invite.password_plain) {
+                void navigator.clipboard.writeText(invite.password_plain);
+                toast.success("Password copied");
+              } else {
+                setEditOpen(true);
+                toast(
+                  "This invite predates password storage — set a new password to copy it."
+                );
+              }
+            }}
+          >
+            <KeyRound /> Copy password
           </DropdownMenuItem>
 
           {invite.status === "ACTIVE" && (

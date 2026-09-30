@@ -176,6 +176,7 @@ export interface SetupInvite {
   competition_id: string | null;
   status: "ACTIVE" | "USED" | "REVOKED";
   expires_at: string | null;
+  password_plain: string | null;
   created_by: string | null;
   used_at: string | null;
   created_at: string;
