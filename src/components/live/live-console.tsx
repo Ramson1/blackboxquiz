@@ -20,9 +20,13 @@ import {
 import type { LiveEngineApi } from "@/features/live/engine-api";
 import type { LiveContentMap, RevealInfo } from "@/features/live/types";
 import { Scoreboard } from "@/components/live/scoreboard";
+import { VictoryScreen } from "@/components/live/victory-screen";
 import { QuestionPicker } from "@/components/live/question-picker";
 import { QuestionScreen } from "@/components/live/question-screen";
 import { RevealDialog } from "@/components/live/reveal-dialog";
+import { SoundControls } from "@/components/live/sound-controls";
+import { sound } from "@/features/audio/sound-engine";
+import { useCompetitionSound } from "@/features/audio/use-competition-sound";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -85,6 +89,7 @@ export function LiveConsoleView({
 }) {
   const [reveal, setReveal] = useState<RevealInfo | null>(null);
   const state = engine.state;
+  const { prefs, setPrefs } = useCompetitionSound(competitionId, state);
 
   const colorFor = useCallback(
     (points: number) => pointColors[String(points)] ?? pointColorFor(points),
@@ -105,6 +110,8 @@ export function LiveConsoleView({
       if (!last) return;
       const q = contentMap[last.questionId];
       if (!q) return;
+      // Result sting fires the instant the reveal overlay opens.
+      sound.playCue(last.pointsAwarded > 0 ? "correct" : "incorrect");
       setReveal({
         question: q,
         awardedTeamId: last.pointsAwarded > 0 ? last.teamId : null,
@@ -161,30 +168,37 @@ export function LiveConsoleView({
         >
           Exit live console
         </Button>
-        {(state.status === "LIVE" || state.status === "PAUSED") && (
-          <div className="flex gap-2">
-            {paused ? (
-              <Button size="sm" onClick={() => engine.resume()}>
-                <Play /> Resume
-              </Button>
-            ) : (
+        <div className="flex items-center gap-2">
+          <SoundControls
+            competitionId={competitionId}
+            prefs={prefs}
+            setPrefs={setPrefs}
+          />
+          {(state.status === "LIVE" || state.status === "PAUSED") && (
+            <div className="flex gap-2">
+              {paused ? (
+                <Button size="sm" onClick={() => engine.resume()}>
+                  <Play /> Resume
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => engine.pause()}
+                >
+                  <Pause /> Pause
+                </Button>
+              )}
               <Button
                 size="sm"
-                variant="outline"
-                onClick={() => engine.pause()}
+                variant="destructive"
+                onClick={() => engine.complete()}
               >
-                <Pause /> Pause
+                <Flag /> End competition
               </Button>
-            )}
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => engine.complete()}
-            >
-              <Flag /> End competition
-            </Button>
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="rounded-2xl border bg-card p-4 sm:p-5">
@@ -357,59 +371,23 @@ function CompletedView({
   exitHref?: string;
   hideResults?: boolean;
 }) {
-  const [a, b] = state.teams;
-  const winner =
-    a && b
-      ? a.currentScore === b.currentScore
-        ? null
-        : a.currentScore > b.currentScore
-          ? a
-          : b
-      : null;
   return (
-    <Card>
-      <CardContent className="flex flex-col items-center gap-4 py-10 text-center">
-        <h2 className="text-2xl font-black">Competition complete</h2>
-        {winner ? (
-          <p className="text-lg font-semibold" style={{ color: winner.color }}>
-            🏆 {winner.name} wins {winner.currentScore.toLocaleString()}
-          </p>
-        ) : (
-          <p className="text-lg font-semibold text-muted-foreground">
-            It&apos;s a tie!
-          </p>
-        )}
-        <div className="flex gap-8">
-          {state.teams.map((t) => (
-            <div key={t.id} className="flex flex-col">
-              <span className="text-sm text-muted-foreground">{t.name}</span>
-              <span
-                className="text-3xl font-black tabular-nums"
-                style={{ color: t.color }}
-              >
-                {t.currentScore.toLocaleString()}
-              </span>
-            </div>
-          ))}
-        </div>
-        <div className="flex gap-2">
-          {!hideResults && (
-            <Button
-              variant="outline"
-              render={<Link href={`/competitions/${competitionId}/results`} />}
-            >
-              View full results
-            </Button>
-          )}
-          <Button
-            render={
-              <Link href={exitHref ?? `/competitions/${competitionId}`} />
-            }
-          >
-            {exitHref ? "Exit" : "Back to competition"}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+    <VictoryScreen teams={state.teams}>
+      {!hideResults && (
+        <Button
+          variant="outline"
+          size="lg"
+          render={<Link href={`/competitions/${competitionId}/results`} />}
+        >
+          View full results
+        </Button>
+      )}
+      <Button
+        size="lg"
+        render={<Link href={exitHref ?? `/competitions/${competitionId}`} />}
+      >
+        {exitHref ? "Exit" : "Back to competition"}
+      </Button>
+    </VictoryScreen>
   );
 }
