@@ -9,7 +9,7 @@ import {
   publicRecordEvents,
   publicStart,
 } from "@/services/public/public-service";
-import type { PublicBundle } from "@/types/public";
+import type { PublicBundle, PublicSetupSnapshot } from "@/types/public";
 
 /**
  * Public competition actions (migration 0012). Deliberately NOT gated by
@@ -21,7 +21,14 @@ import type { PublicBundle } from "@/types/public";
 
 export type PublicActionResult = { ok: true } | { ok: false; error: string };
 export type PublicCheckResult =
-  | { ok: true; organizationName: string | null }
+  | {
+      ok: true;
+      organizationName: string | null;
+      used: boolean;
+      editable: boolean;
+      status: string | null;
+      setup: PublicSetupSnapshot | null;
+    }
   | { ok: false; error: string };
 export type PublicStartResult =
   | { ok: true; bundle: PublicBundle }
@@ -60,7 +67,14 @@ export async function setupCheckAction(input: {
   if (!limit.ok) return throttleFail(limit);
   try {
     const res = await publicCheckSetup(parsed.data.token, parsed.data.password);
-    return { ok: true, organizationName: res.organization_name ?? null };
+    return {
+      ok: true,
+      organizationName: res.organization_name ?? null,
+      used: res.used,
+      editable: res.editable,
+      status: res.status,
+      setup: res.setup,
+    };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Invalid link or password" };
   }

@@ -87,6 +87,8 @@ export function PublicSetupWizard({ token }: { token: string }) {
   const [password, setPassword] = useState("");
   const [organizationName, setOrganizationName] = useState<string | null>(null);
   const [gateError, setGateError] = useState<string | null>(null);
+  // True when re-entering a link that already published an editable setup.
+  const [editing, setEditing] = useState(false);
 
   // Wizard data (persisted per token).
   const [draft, setDraft] = useState<SetupDraft>(EMPTY_DRAFT);
@@ -195,12 +197,36 @@ export function PublicSetupWizard({ token }: { token: string }) {
     setGateError(null);
     start(async () => {
       const res = await setupCheckAction({ token, password });
-      if (res.ok) {
-        setOrganizationName(res.organizationName);
-        setStep(1);
-      } else {
+      if (!res.ok) {
         setGateError(res.error);
+        return;
       }
+      setOrganizationName(res.organizationName);
+
+      if (res.used) {
+        // The link already produced a competition. Resume it while it is still
+        // unstarted; freeze once the run has begun so scores stay truthful.
+        if (res.editable && res.setup) {
+          const s = res.setup;
+          setDraft({
+            title: s.title ?? "",
+            teamOne: s.teamOne ?? "",
+            teamTwo: s.teamTwo ?? "",
+            timePerQuestion: s.timePerQuestion ?? 20,
+            questions: s.questions ?? [],
+          });
+          setEditing(true);
+          setStep(1);
+          toast.success("Loaded your saved setup — edit anything and save again.");
+        } else {
+          setGateError(
+            "This competition has already started and can no longer be edited from this setup link."
+          );
+        }
+        return;
+      }
+
+      setStep(1);
     });
   }
 
@@ -330,10 +356,12 @@ export function PublicSetupWizard({ token }: { token: string }) {
             <span className="flex size-14 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-500">
               <Check className="size-8" />
             </span>
-            <h2 className="text-xl font-bold">You&apos;re all set!</h2>
+            <h2 className="text-xl font-bold">
+              {editing ? "Changes saved!" : "You're all set!"}
+            </h2>
             <p className="text-sm text-muted-foreground">
               <span className="font-semibold">{draft.title || "Your competition"}</span>{" "}
-              is ready with {draft.questions.length} question
+              {editing ? "was updated with" : "is ready with"} {draft.questions.length} question
               {draft.questions.length === 1 ? "" : "s"}.
             </p>
             <div className="w-full rounded-lg border bg-muted/40 p-4 text-left">
@@ -401,6 +429,12 @@ export function PublicSetupWizard({ token }: { token: string }) {
       {step === 1 && (
         <Card>
           <div className="flex flex-col gap-4">
+            {editing && (
+              <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm font-medium text-primary">
+                <Pencil className="size-4" />
+                Editing your saved setup — changes overwrite the competition.
+              </div>
+            )}
             <div>
               <h2 className="text-lg font-bold">Competition details</h2>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -742,9 +776,13 @@ export function PublicSetupWizard({ token }: { token: string }) {
         <Card>
           <div className="flex flex-col gap-4">
             <div>
-              <h2 className="text-lg font-bold">Review &amp; publish</h2>
+              <h2 className="text-lg font-bold">
+                {editing ? "Review & save changes" : "Review & publish"}
+              </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                One check before we build your competition board.
+                {editing
+                  ? "One check before we overwrite your competition board."
+                  : "One check before we build your competition board."}
               </p>
             </div>
             <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
@@ -781,7 +819,13 @@ export function PublicSetupWizard({ token }: { token: string }) {
               </Button>
               <Button onClick={completeSetup} disabled={pending}>
                 <ShieldCheck />
-                {pending ? "Publishing…" : "Publish competition"}
+                {pending
+                  ? editing
+                    ? "Saving…"
+                    : "Publishing…"
+                  : editing
+                    ? "Save changes"
+                    : "Publish competition"}
               </Button>
             </div>
           </div>

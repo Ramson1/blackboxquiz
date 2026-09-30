@@ -53,3 +53,46 @@ export async function revokeSetupInvite(inviteId: string): Promise<void> {
   });
   if (error) throw new Error(error.message);
 }
+
+/**
+ * Edit an invite: label + expiry always apply; a non-empty password rotates
+ * the credential. Because only a bcrypt hash is stored, the new plaintext is
+ * returned once (null when the password was not changed) for a reveal-once card.
+ */
+export async function updateSetupInvite(input: {
+  inviteId: string;
+  label?: string | null;
+  expiresAt?: string | null;
+  password?: string | null;
+}): Promise<{ rotated: boolean; password: string | null }> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("blackboxquiz_update_setup_invite", {
+    p_invite_id: input.inviteId,
+    p_label: input.label ?? null,
+    p_expires_at: input.expiresAt ?? null,
+    p_password: input.password ?? null,
+  });
+  if (error) throw new Error(error.message);
+  return (data ?? { rotated: false, password: null }) as unknown as {
+    rotated: boolean;
+    password: string | null;
+  };
+}
+
+/** Undo a revoke — restore a REVOKED invite to ACTIVE. */
+export async function reactivateSetupInvite(inviteId: string): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("blackboxquiz_reactivate_setup_invite", {
+    p_invite_id: inviteId,
+  });
+  if (error) throw new Error(error.message);
+}
+
+/** Delete an unused/revoked invite. The RPC rejects USED invites. */
+export async function deleteSetupInvite(inviteId: string): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("blackboxquiz_delete_setup_invite", {
+    p_invite_id: inviteId,
+  });
+  if (error) throw new Error(error.message);
+}

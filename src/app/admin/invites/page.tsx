@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { CreateInviteDialog, RevokeInviteButton, CopyLinkButton } from "./controls";
+import { CreateInviteDialog, InviteActionsMenu, CopyLinkButton } from "./controls";
 import { format } from "date-fns";
 
 export const metadata: Metadata = { title: "Setup Invites" };
@@ -88,9 +88,7 @@ export default async function SetupInvitesPage() {
                 </TableCell>
                 <TableCell>
                   <div className="flex justify-end">
-                    {invite.status === "ACTIVE" && (
-                      <RevokeInviteButton inviteId={invite.id} label={invite.label} />
-                    )}
+                    <InviteActionsMenu invite={invite} />
                   </div>
                 </TableCell>
               </TableRow>

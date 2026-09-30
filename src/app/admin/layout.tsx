@@ -8,9 +8,9 @@ import {
 const NAV: NavItem[] = [
   { label: "Dashboard", href: "/admin/dashboard", icon: "dashboard" },
   { label: "Organizations", href: "/admin/organizations", icon: "organizations" },
+  { label: "Setup Invites", href: "/admin/invites", icon: "link" },
   { label: "Competitions", href: "/admin/competitions", icon: "trophy" },
   { label: "Users", href: "/admin/users", icon: "users" },
-  { label: "Setup Invites", href: "/admin/invites", icon: "link" },
   { label: "Quiz Workspace", href: "/competitions", icon: "workspace" },
 ];
 

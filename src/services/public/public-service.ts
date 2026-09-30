@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { EngineEvent } from "@/features/engine/types";
 import type {
   PublicBundle,
+  PublicSetupSnapshot,
   PublicSetupSubmission,
 } from "@/types/public";
 
@@ -14,21 +15,37 @@ import type {
  * `Error`s with the user-facing message for the actions layer to format.
  */
 
+/** Outcome of the first wizard gate. Beyond verifying the password it also
+ * reports whether this link has already been published (`used`) and, when it
+ * points at a still-editable (READY) competition, the saved `setup` snapshot. */
+export interface PublicSetupCheck {
+  ok: boolean;
+  organization_name: string | null;
+  used: boolean;
+  editable: boolean;
+  status: string | null;
+  setup: PublicSetupSnapshot | null;
+}
+
 /** First gate of the setup wizard: token + password check. */
 export async function publicCheckSetup(
   token: string,
   password: string
-): Promise<{ ok: boolean; organization_name: string | null }> {
+): Promise<PublicSetupCheck> {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("blackboxquiz_public_check_setup", {
     p_token: token,
     p_password: password,
   });
   if (error) throw new Error(error.message);
-  return (data ?? { ok: false, organization_name: null }) as {
-    ok: boolean;
-    organization_name: string | null;
-  };
+  return (data ?? {
+    ok: false,
+    organization_name: null,
+    used: false,
+    editable: false,
+    status: null,
+    setup: null,
+  }) as PublicSetupCheck;
 }
 
 /** Submits the whole setup in one atomic call. */

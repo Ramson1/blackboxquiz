@@ -50,3 +50,14 @@ export interface PublicSetupSubmission {
   timePerQuestion: number;
   questions: PublicSetupQuestion[];
 }
+
+/** The saved competition snapshot returned by `blackboxquiz_public_check_setup`
+ * when a setup link has already been published, so the wizard can resume/edit
+ * it. Mirrors the `setup` jsonb the RPC builds. */
+export interface PublicSetupSnapshot {
+  title: string;
+  teamOne: string | null;
+  teamTwo: string | null;
+  timePerQuestion: number;
+  questions: PublicSetupQuestion[];
+}
