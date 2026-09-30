@@ -10,6 +10,8 @@ import {
   Link2,
   Menu,
   MonitorPlay,
+  PanelLeft,
+  PanelLeftClose,
   Trophy,
   Users,
   X,
@@ -53,6 +55,25 @@ export function DashboardShell({
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  // Desktop sidebar collapse — remembered across sessions per browser.
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return localStorage.getItem("bbq-sidebar-collapsed") === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleSidebar = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    try {
+      localStorage.setItem("bbq-sidebar-collapsed", next ? "1" : "0");
+    } catch {
+      // Private mode — the toggle still works for this session.
+    }
+  };
 
   const links = (
     <nav className="flex flex-col gap-1">
@@ -87,20 +108,37 @@ export function DashboardShell({
 
   return (
     <div className="flex min-h-svh flex-1">
-      {/* Desktop sidebar */}
-      <aside className="hidden w-60 shrink-0 flex-col border-r bg-sidebar lg:flex">
-        <div className="flex h-14 items-center gap-2.5 border-b px-4">
-          <BlackBoxLogo className="h-8 w-8 rounded-lg" />
-          <div className="leading-tight">
-            <p className="text-sm font-black tracking-tight">
-              BLACKBOX <span className="text-primary">QUIZ</span>
-            </p>
-            <p className="text-[10px] text-muted-foreground">{areaLabel}</p>
+      {/* Desktop sidebar — collapsible via the header toggle */}
+      <aside
+        className={cn(
+          "hidden shrink-0 flex-col overflow-hidden border-r bg-sidebar transition-[width] duration-300 ease-out lg:flex",
+          collapsed ? "w-0 border-r-0" : "w-60"
+        )}
+      >
+        <div className="flex w-60 flex-1 flex-col">
+          <div className="flex h-14 items-center gap-2.5 border-b px-4">
+            <BlackBoxLogo className="h-8 w-8 rounded-lg" />
+            <div className="leading-tight">
+              <p className="text-sm font-black tracking-tight">
+                BLACKBOX <span className="text-primary">QUIZ</span>
+              </p>
+              <p className="text-[10px] text-muted-foreground">{areaLabel}</p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="ml-auto text-muted-foreground"
+              onClick={toggleSidebar}
+              aria-label="Collapse sidebar"
+              title="Collapse sidebar"
+            >
+              <PanelLeftClose />
+            </Button>
           </div>
-        </div>
-        <div className="flex-1 overflow-y-auto p-3">{links}</div>
-        <div className="border-t p-4">
-          <BrandFooter />
+          <div className="flex-1 overflow-y-auto p-3">{links}</div>
+          <div className="border-t p-4">
+            <BrandFooter />
+          </div>
         </div>
       </aside>
 
@@ -140,6 +178,16 @@ export function DashboardShell({
       {/* Main column */}
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur-md lg:bg-background/60">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden lg:inline-flex"
+            onClick={toggleSidebar}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Show sidebar" : "Hide sidebar"}
+          >
+            <PanelLeft />
+          </Button>
           <Button
             variant="ghost"
             size="icon"
