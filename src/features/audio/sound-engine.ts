@@ -3,8 +3,8 @@
 /**
  * Competition sound engine — 100% WebAudio-synthesized, zero audio assets.
  * Provides six event cues (turn switch, question reveal, urgent ticks, correct,
- * incorrect, victory fanfare), a built-in "arena mix" ambient loop and a deck
- * for one custom music track (uploaded by the operator). Browsers only allow
+ * incorrect, victory fanfare), a built-in tense/suspenseful "arena mix" ambient
+ * loop and a deck for one custom music track (uploaded by the operator). Browsers only allow
  * audio after a user gesture, so everything routes through a lazy AudioContext
  * plus a one-time pointerdown/keydown unlock; playback intent is remembered in
  * `lastCfg` and reconciled the moment the page is unlocked.
@@ -29,14 +29,14 @@ export interface SoundConfig {
 
 const midi = (m: number) => 440 * Math.pow(2, (m - 69) / 12);
 
-/** C – G – Am – F pad progression, one chord every 4 seconds. */
-const CHORDS = [
-  [48, 55, 60, 64],
-  [43, 50, 55, 59],
-  [45, 52, 57, 60],
-  [41, 48, 53, 57],
-];
-const CHORD_MS = 4000;
+/**
+ * Tension cycle in D minor — i–VII–VI–V (Dm · C · B♭ · A). The pull back to the
+ * tonic and the dominant A give a dark, urgent, "time-is-running-out" feel.
+ * Each entry is a low bass root; harmony is layered on top during the loop.
+ */
+const BASS_ROOTS = [38, 36, 34, 33]; // D2 · C2 · B♭1 · A1
+const STEP_MS = 250; // pulse resolution — a fast ticking ostinato
+const STEPS_PER_BAR = 8; // one harmony change every 2s
 
 class CompetitionSoundEngine {
   private ctx: AudioContext | null = null;
@@ -118,8 +118,10 @@ class CompetitionSoundEngine {
         this.tone(1100, 0, 0.08, "square", 0.08);
         break;
       case "reveal":
-        this.tone(523.25, 0, 0.16, "triangle", 0.16);
-        this.tone(783.99, 0.13, 0.24, "triangle", 0.16);
+        // Low ominous double-hit + airy sweep — dramatic, not decorative.
+        this.tone(midi(45), 0, 0.4, "sawtooth", 0.13, midi(45) * 0.7);
+        this.tone(midi(52), 0.16, 0.34, "square", 0.06);
+        this.swoosh(0.04);
         break;
       case "turn":
         this.swoosh();
@@ -199,49 +201,102 @@ class CompetitionSoundEngine {
     if (!this.ensure()) return;
     if (this.ambientTimer != null) return;
     this.stopMusic();
-    const beat = () => {
+    const step = () => {
       const ctx = this.ctx;
       if (!ctx || ctx.state !== "running") return;
-      const chord = CHORDS[this.chordIndex % CHORDS.length];
+      const bar =
+        Math.floor(this.chordIndex / STEPS_PER_BAR) % BASS_ROOTS.length;
+      const inBar = this.chordIndex % STEPS_PER_BAR;
+      const root = BASS_ROOTS[bar];
+
+      // Driving ostinato pulse — a short saw stab every step, accented on the
+      // beat with a slight downward pitch bend for a pressing, ticking feel.
+      const accent = inBar % 2 === 0;
+      this.tone(
+        midi(root),
+        0,
+        accent ? 0.16 : 0.11,
+        "sawtooth",
+        accent ? 0.05 : 0.03,
+        midi(root) * 0.98
+      );
+      // Off-beat high stab: adds nervous, clock-like urgency.
+      if (!accent) this.tone(midi(root + 12), 0, 0.05, "square", 0.022);
+
+      // Heartbeat kick on beats 1 and 3 — the pulse of suspense.
+      if (inBar === 0 || inBar === STEPS_PER_BAR / 2) {
+        this.tone(midi(root - 12), 0, 0.22, "sine", 0.14, midi(root - 12) * 0.6);
+      }
+
+      // Uneasy tremolo pad at the head of each bar.
+      if (inBar === 0) this.tensionPad(root);
+
+      // Rising swell into the resolve on the dominant (last bar).
+      if (bar === BASS_ROOTS.length - 1 && inBar === STEPS_PER_BAR - 2) {
+        this.riser(root);
+      }
+
       this.chordIndex++;
-      // Warm pad: detuned triangle pair through a lowpass, long soft envelope.
-      chord.forEach((m) => {
-        const f = midi(m);
-        for (const detune of [-4, 4]) {
-          const osc = ctx.createOscillator();
-          osc.type = "triangle";
-          osc.frequency.value = f;
-          osc.detune.value = detune;
-          const lp = ctx.createBiquadFilter();
-          lp.type = "lowpass";
-          lp.frequency.value = 900;
-          const g = ctx.createGain();
-          const t = ctx.currentTime;
-          g.gain.setValueAtTime(0.0001, t);
-          g.gain.exponentialRampToValueAtTime(0.035, t + 1.3);
-          g.gain.setValueAtTime(0.035, t + 2.6);
-          g.gain.exponentialRampToValueAtTime(0.0001, t + 4.1);
-          osc.connect(lp).connect(g).connect(this.master!);
-          osc.start(t);
-          osc.stop(t + 4.25);
-        }
-      });
-      // Sub bass root, one octave under the chord root.
-      const bass = ctx.createOscillator();
-      bass.type = "sine";
-      bass.frequency.value = midi(chord[0] - 12);
-      const bg = ctx.createGain();
-      const bt = ctx.currentTime;
-      bg.gain.setValueAtTime(0.0001, bt);
-      bg.gain.exponentialRampToValueAtTime(0.06, bt + 0.4);
-      bg.gain.exponentialRampToValueAtTime(0.0001, bt + 3.6);
-      bass.connect(bg).connect(this.master!);
-      bass.start(bt);
-      bass.stop(bt + 3.8);
     };
-    beat();
-    this.ambientTimer = window.setInterval(beat, CHORD_MS);
+    step();
+    this.ambientTimer = window.setInterval(step, STEP_MS);
   }
+
+  /** Sustained minor-second cluster (root + ♭9 colour) — dark, shimmering dread. */
+  private tensionPad(root: number) {
+    const ctx = this.ctx;
+    if (!ctx || ctx.state !== "running" || !this.master) return;
+    const t = ctx.currentTime;
+    const dur = 2.0;
+    // Perfect fifth for openness + a semitone clash for tension.
+    for (const [m, det] of [
+      [root + 12, -6],
+      [root + 19, 6],
+      [root + 13, 10],
+    ] as const) {
+      const osc = ctx.createOscillator();
+      osc.type = "triangle";
+      osc.frequency.value = midi(m);
+      osc.detune.value = det;
+      const lp = ctx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.setValueAtTime(550, t);
+      lp.frequency.linearRampToValueAtTime(1700, t + dur * 0.7);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.028, t + 0.5);
+      g.gain.setValueAtTime(0.028, t + dur * 0.7);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      osc.connect(lp).connect(g).connect(this.master);
+      osc.start(t);
+      osc.stop(t + dur + 0.05);
+    }
+  }
+
+  /** Filtered upward saw sweep — the classic "hold that question…" riser. */
+  private riser(root: number) {
+    const ctx = this.ctx;
+    if (!ctx || ctx.state !== "running" || !this.master) return;
+    const t = ctx.currentTime;
+    const dur = 0.9;
+    const osc = ctx.createOscillator();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(midi(root), t);
+    osc.frequency.exponentialRampToValueAtTime(midi(root + 19), t + dur);
+    const lp = ctx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.setValueAtTime(800, t);
+    lp.frequency.exponentialRampToValueAtTime(5200, t + dur);
+    lp.Q.value = 6;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.05, t + dur * 0.85);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(lp).connect(g).connect(this.master);
+    osc.start(t);
+    osc.stop(t + dur + 0.02);
+  }
+
 
   private stopAmbient() {
     if (this.ambientTimer != null) {

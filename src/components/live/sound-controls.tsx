@@ -16,7 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { cn } from "cn";
 
 const MODES: { value: SoundMode; label: string; hint: string }[] = [
-  { value: "builtin", label: "Arena mix", hint: "Built-in synth loop" },
+  { value: "builtin", label: "Tension mix", hint: "Driving suspense loop" },
   { value: "custom", label: "Custom track", hint: "Your uploaded audio" },
   { value: "off", label: "Music off", hint: "Event sounds only" },
 ];
