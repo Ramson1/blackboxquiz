@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Flag,
@@ -96,11 +96,12 @@ export function LiveConsoleView({
     [pointColors]
   );
 
-  const teamById = useCallback(
-    (id: string | null) =>
-      id ? (state.teams.find((t) => t.id === id)?.name ?? "") : "",
-    [state.teams]
-  );
+  // Team honored on the current reveal overlay (color + name for the UI).
+  const revealedTeam = useMemo(() => {
+    if (!reveal || reveal.awardedPoints <= 0 || !reveal.awardedTeamId) return null;
+    const t = state.teams.find((x) => x.id === reveal.awardedTeamId);
+    return t ? { name: t.name, color: t.color } : null;
+  }, [reveal, state.teams]);
 
   // Detect a finalized question after a submit and open the reveal overlay.
   const afterFinal = useCallback(
@@ -309,7 +310,7 @@ export function LiveConsoleView({
 
       <RevealDialog
         reveal={reveal}
-        teamName={teamById}
+        team={revealedTeam}
         onContinue={() => setReveal(null)}
       />
     </div>
