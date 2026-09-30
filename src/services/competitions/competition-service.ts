@@ -98,6 +98,45 @@ export async function setCompetitionStatus(
   if (error) throw new Error(error.message);
 }
 
+/**
+ * Edit competition details (name/description/schedule/timer). RLS requires
+ * blackboxquiz_can_manage_competition(id); the slug stays stable so existing
+ * links keep working after a rename.
+ */
+export async function updateCompetition(
+  id: string,
+  patch: {
+    name?: string;
+    description?: string | null;
+    scheduledAt?: string | null;
+    defaultTimeLimit?: number;
+  }
+): Promise<void> {
+  const supabase = await createClient();
+  const updates: Record<string, unknown> = {};
+  if (patch.name !== undefined) updates.name = patch.name;
+  if (patch.description !== undefined) updates.description = patch.description;
+  if (patch.scheduledAt !== undefined) updates.scheduled_at = patch.scheduledAt;
+  if (patch.defaultTimeLimit !== undefined)
+    updates.default_time_limit = patch.defaultTimeLimit;
+  if (Object.keys(updates).length === 0) return;
+  const { error } = await supabase
+    .from("blackboxquiz_competitions")
+    .update(updates)
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+/** Hard delete — SUPER_ADMIN only per RLS; cascades teams/questions/attempts. */
+export async function deleteCompetition(id: string): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("blackboxquiz_competitions")
+    .delete()
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
 export async function lockCompetition(id: string, reason: string): Promise<void> {
   const supabase = await createClient();
   const { error } = await supabase.rpc("blackboxquiz_lock_competition", {

@@ -88,67 +88,75 @@ export function Scoreboard({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      {/* On-turn team dominates the board; the off-turn team stays visible but small and desaturated. */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-stretch">
         {teams.map((t) => {
           const active = t.id === currentTeamId;
           const live = status === "LIVE" || status === "PAUSED";
+          if (!active) {
+            return (
+              <div
+                key={t.id}
+                className="order-2 flex min-w-0 flex-col justify-center gap-1 rounded-xl border bg-muted/40 p-3 opacity-70 grayscale transition-all duration-300 lg:w-52"
+              >
+                <div className="flex items-center gap-2">
+                  <span
+                    className="size-2.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: t.color }}
+                  />
+                  <span className="truncate text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    {t.name}
+                  </span>
+                </div>
+                <span className="pl-[18px] text-2xl font-bold tabular-nums text-muted-foreground">
+                  {t.currentScore.toLocaleString()}
+                </span>
+              </div>
+            );
+          }
           return (
             <div
               key={t.id}
-              className={cn(
-                "relative overflow-hidden rounded-xl border-2 p-4 transition-all duration-300",
-                active
-                  ? live
-                    ? "scale-[1.02] shadow-xl"
-                    : "shadow-lg"
-                  : "bg-card opacity-70"
-              )}
-              style={
-                active
-                  ? {
-                      borderColor: t.color,
-                      backgroundColor: `${t.color}1f`,
-                      boxShadow: `0 14px 36px -14px ${t.color}99`,
-                    }
-                  : { borderColor: `${t.color}59` }
-              }
+              className="relative order-1 min-w-0 flex-1 overflow-hidden rounded-2xl border-2"
+              style={{
+                borderColor: t.color,
+                boxShadow: `0 20px 56px -16px ${t.color}b3`,
+              }}
             >
+              {/* Solid color header: the projector-legible ON TURN bar (only while on air) */}
               <div
-                className="absolute inset-y-0 left-0 w-1.5"
-                style={{ backgroundColor: t.color }}
-              />
-              {active && live && (
-                <div
-                  className="absolute inset-x-0 top-0 h-1"
-                  style={{ backgroundColor: t.color }}
-                />
-              )}
-              <div className="flex flex-col gap-1.5 pl-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span
-                    className={cn("truncate font-bold", active && "text-lg")}
-                    style={active ? { color: t.color } : undefined}
-                  >
-                    {t.name}
+                className="relative flex items-center justify-between gap-3 px-5 py-3.5 text-white"
+                style={{
+                  backgroundImage: `linear-gradient(135deg, ${t.color}, ${t.color}c9)`,
+                }}
+              >
+                {live ? (
+                  <span className="flex animate-pulse items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-sm font-black uppercase tracking-[0.2em] ring-1 ring-white/40">
+                    <span className="size-2 rounded-full bg-white" />
+                    On turn
                   </span>
-                  {active && (
-                    <span
-                      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-white"
-                      style={{ backgroundColor: t.color }}
-                    >
-                      <span className="size-1.5 animate-ping rounded-full bg-white" />
-                      On turn
-                    </span>
-                  )}
-                </div>
+                ) : (
+                  <span className="text-sm font-black uppercase tracking-[0.2em] text-white/80">
+                    {status === "COMPLETED" ? "Final" : "Current"}
+                  </span>
+                )}
+                <span className="truncate text-lg font-black uppercase tracking-tight sm:text-xl">
+                  {t.name}
+                </span>
+              </div>
+              {/* Tinted body with the oversized live score */}
+              <div
+                className="flex items-end justify-between gap-4 px-5 py-4"
+                style={{ backgroundColor: `${t.color}1f` }}
+              >
                 <span
-                  className={cn(
-                    "text-4xl font-black tabular-nums",
-                    !active && "text-foreground"
-                  )}
-                  style={active ? { color: t.color } : undefined}
+                  className="text-6xl font-black leading-none tabular-nums sm:text-7xl"
+                  style={{ color: t.color }}
                 >
                   {t.currentScore.toLocaleString()}
+                </span>
+                <span className="pb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                  points
                 </span>
               </div>
             </div>

@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { CreateOrgButton, OrgStatusMenu } from "@/app/admin/organizations/controls";
+import { CreateOrgButton, OrgActionsMenu } from "@/app/admin/organizations/controls";
 import { format } from "date-fns";
 
 export const metadata: Metadata = { title: "Organizations" };
@@ -75,7 +75,7 @@ export default async function OrganizationsPage() {
                   {format(new Date(org.created_at), "d MMM yyyy")}
                 </TableCell>
                 <TableCell>
-                  <OrgStatusMenu
+                  <OrgActionsMenu
                     id={org.id}
                     name={org.name}
                     status={org.status}

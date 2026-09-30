@@ -5,6 +5,8 @@ import { z } from "zod";
 import {
   addOrganizationMember,
   createOrganization,
+  deleteOrganization,
+  getOrganizationById,
   removeOrganizationMember,
   updateMemberRole,
   updateOrganization,
@@ -70,31 +72,72 @@ export async function createOrganizationAction(
   }
 }
 
-const statusSchema = z.object({
+const orgUpdateSchema = z.object({
   id: z.string().uuid(),
-  status: z.enum(["ACTIVE", "SUSPENDED", "ARCHIVED"]),
+  name: z.string().min(2, "Organization name is too short").max(120).optional(),
+  status: z.enum(["ACTIVE", "SUSPENDED", "ARCHIVED"]).optional(),
 });
 
-export async function setOrganizationStatusAction(
-  input: z.infer<typeof statusSchema>
+export async function updateOrganizationAction(
+  input: z.infer<typeof orgUpdateSchema>
 ): Promise<AdminActionResult> {
-  const parsed = statusSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "Invalid organization id." };
+  const parsed = orgUpdateSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Invalid organization." };
+  const { id, name, status } = parsed.data;
+  if (name === undefined && status === undefined) {
+    return { ok: false, error: "Nothing to update." };
+  }
   try {
-    const org = await updateOrganization(parsed.data.id, {
-      status: parsed.data.status,
-    });
+    const patch: { name?: string; slug?: string; status?: typeof status } = {};
+    if (name !== undefined) {
+      patch.name = name;
+      // Slug follows the name (same rule as create); uniqueness is caught below.
+      patch.slug = slugify(name);
+    }
+    if (status !== undefined) patch.status = status;
+    const org = await updateOrganization(id, patch);
     await logAudit({
       organizationId: org.id,
-      action: `ORGANIZATION_${parsed.data.status}`,
+      action: status ? `ORGANIZATION_${status}` : "ORGANIZATION_UPDATED",
       entityType: "organization",
       entityId: org.id,
-      newValue: { status: parsed.data.status },
+      newValue: { name: org.name, slug: org.slug, status: org.status },
     });
     revalidatePath("/admin/organizations");
+    revalidatePath(`/admin/organizations/${id}`);
+    return { ok: true };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.includes("duplicate key")) {
+      return { ok: false, error: "Another organization already uses that name." };
+    }
+    return { ok: false, error: "Could not update organization." };
+  }
+}
+
+export async function deleteOrganizationAction(input: {
+  id: string;
+}): Promise<AdminActionResult> {
+  const parsed = z.object({ id: z.string().uuid() }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Invalid organization id." };
+  const org = await getOrganizationById(parsed.data.id);
+  try {
+    // RLS restricts organization deletes to SUPER_ADMIN. This cascades every
+    // competition, team, question and attempt belonging to the organization.
+    await deleteOrganization(parsed.data.id);
+    await logAudit({
+      organizationId: parsed.data.id,
+      action: "ORGANIZATION_DELETED",
+      entityType: "organization",
+      entityId: parsed.data.id,
+      oldValue: org ? { name: org.name, slug: org.slug } : null,
+    });
+    revalidatePath("/admin/organizations");
+    revalidatePath("/admin/dashboard");
+    revalidatePath("/admin/competitions");
     return { ok: true };
   } catch {
-    return { ok: false, error: "Could not update organization." };
+    return { ok: false, error: "Could not delete organization." };
   }
 }
 

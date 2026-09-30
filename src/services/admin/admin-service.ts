@@ -64,6 +64,15 @@ export async function updateOrganization(
   return data as Organization;
 }
 
+export async function deleteOrganization(id: string): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("blackboxquiz_organizations")
+    .delete()
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
 export async function listUsers() {
   const supabase = await createClient();
   const { data, error } = await supabase

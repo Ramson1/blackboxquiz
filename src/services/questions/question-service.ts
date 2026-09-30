@@ -12,9 +12,12 @@ export async function listQuestions(
   competitionId: string
 ): Promise<QuestionWithOptions[]> {
   const supabase = await createClient();
+  // The `!question_id` hint pins the embed to the options→questions FK. Without
+  // it PostgREST sees two paths between the tables (questions.correct_option_id
+  // points back at options) and refuses the join with "more than one relationship".
   const { data, error } = await supabase
     .from("blackboxquiz_questions")
-    .select("*, options: blackboxquiz_question_options(*)")
+    .select("*, options: blackboxquiz_question_options!question_id(*)")
     .eq("competition_id", competitionId)
     .order("question_number", { ascending: true });
   if (error) throw new Error(error.message);
@@ -32,7 +35,7 @@ export async function getQuestionWithAnswers(
   const supabase = await createClient();
   const { data } = await supabase
     .from("blackboxquiz_questions")
-    .select("*, options: blackboxquiz_question_options(*)")
+    .select("*, options: blackboxquiz_question_options!question_id(*)")
     .eq("id", id)
     .maybeSingle<QuestionWithOptions>();
   if (!data) return null;

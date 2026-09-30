@@ -6,6 +6,7 @@ import {
   listManagedOrganizations,
 } from "@/services/competitions/competition-service";
 import { CreateCompetitionDialog } from "@/app/competitions/create-dialog";
+import { CompetitionActionsMenu } from "@/app/admin/competitions/controls";
 import {
   Table,
   TableBody,
@@ -48,12 +49,13 @@ export default async function AdminCompetitionsPage() {
               <TableHead>Status</TableHead>
               <TableHead>Scheduled</TableHead>
               <TableHead>Created</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {competitions.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
+                <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
                   No competitions yet.
                 </TableCell>
               </TableRow>
@@ -92,6 +94,9 @@ export default async function AdminCompetitionsPage() {
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                   {format(new Date(c.created_at), "d MMM yyyy")}
+                </TableCell>
+                <TableCell>
+                  <CompetitionActionsMenu competition={c} />
                 </TableCell>
               </TableRow>
             ))}

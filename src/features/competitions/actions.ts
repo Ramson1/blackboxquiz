@@ -5,11 +5,14 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import {
   createCompetition,
+  deleteCompetition,
   lockCompetition,
   setCompetitionStatus,
   unlockCompetition,
+  updateCompetition,
 } from "@/services/competitions/competition-service";
 import { requireRole, requireUser } from "@/features/auth/session";
+import { logAudit } from "@/services/admin/audit";
 import { COMPETITION_STATUSES, type CompetitionStatus } from "@/lib/permissions/roles";
 
 export type CompetitionActionResult =
@@ -77,6 +80,88 @@ export async function setCompetitionStatusAction(
     return {
       ok: false,
       error: e instanceof Error ? e.message : "Could not change status.",
+    };
+  }
+}
+
+const updateSchema = z.object({
+  competitionId: z.uuid(),
+  organizationId: z.uuid(),
+  name: z.string().min(3, "Name must be at least 3 characters").max(120),
+  description: z.string().max(2000).optional().or(z.literal("")),
+  scheduledAt: z.string().optional().or(z.literal("")),
+  defaultTimeLimit: z.coerce
+    .number()
+    .int("Must be a whole number of seconds")
+    .min(5, "Minimum 5 seconds")
+    .max(600, "Maximum 600 seconds"),
+});
+
+export async function updateCompetitionAction(
+  input: unknown
+): Promise<CompetitionActionResult> {
+  await requireUser();
+  const parsed = updateSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0].message };
+  }
+  const { competitionId, organizationId, name, description, scheduledAt, defaultTimeLimit } =
+    parsed.data;
+  try {
+    // RLS (blackboxquiz_can_manage_competition) decides who may edit this row.
+    await updateCompetition(competitionId, {
+      name,
+      description: description || null,
+      scheduledAt: scheduledAt ? new Date(scheduledAt).toISOString() : null,
+      defaultTimeLimit,
+    });
+    await logAudit({
+      organizationId,
+      competitionId,
+      action: "COMPETITION_UPDATED",
+      entityType: "competition",
+      entityId: competitionId,
+      newValue: { name, scheduled_at: scheduledAt || null, default_time_limit: defaultTimeLimit },
+    });
+    revalidatePath(`/competitions/${competitionId}`);
+    revalidatePath("/competitions");
+    revalidatePath("/admin/competitions");
+    return { ok: true };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Could not update competition.",
+    };
+  }
+}
+
+export async function deleteCompetitionAction(input: {
+  competitionId: string;
+  organizationId: string;
+}): Promise<CompetitionActionResult> {
+  await requireUser();
+  const parsed = z
+    .object({ competitionId: z.uuid(), organizationId: z.uuid() })
+    .safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Invalid competition id." };
+  try {
+    // RLS restricts competition deletes to SUPER_ADMIN; teams, questions and
+    // attempts cascade with it.
+    await deleteCompetition(parsed.data.competitionId);
+    await logAudit({
+      organizationId: parsed.data.organizationId,
+      competitionId: parsed.data.competitionId,
+      action: "COMPETITION_DELETED",
+      entityType: "competition",
+      entityId: parsed.data.competitionId,
+    });
+    revalidatePath("/competitions");
+    revalidatePath("/admin/competitions");
+    return { ok: true };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Could not delete competition.",
     };
   }
 }
