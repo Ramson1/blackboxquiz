@@ -10,8 +10,8 @@ const NAV: NavItem[] = [
   { label: "Organizations", href: "/admin/organizations", icon: "organizations" },
   { label: "Setup Invites", href: "/admin/invites", icon: "link" },
   { label: "Competitions", href: "/admin/competitions", icon: "trophy" },
-  { label: "Users", href: "/admin/users", icon: "users" },
   { label: "Quiz Workspace", href: "/competitions", icon: "workspace" },
+  { label: "Users", href: "/admin/users", icon: "users" },
 ];
 
 export default async function AdminLayout({
