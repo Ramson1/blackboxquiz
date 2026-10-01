@@ -96,11 +96,10 @@ export function LiveConsoleView({
     [pointColors]
   );
 
-  // Team honored on the current reveal overlay (color + name for the UI).
-  const revealedTeam = useMemo(() => {
+  // Team name honored on the current reveal overlay, when points were earned.
+  const revealedTeamName = useMemo(() => {
     if (!reveal || reveal.awardedPoints <= 0 || !reveal.awardedTeamId) return null;
-    const t = state.teams.find((x) => x.id === reveal.awardedTeamId);
-    return t ? { name: t.name, color: t.color } : null;
+    return state.teams.find((x) => x.id === reveal.awardedTeamId)?.name ?? null;
   }, [reveal, state.teams]);
 
   // Detect a finalized question after a submit and open the reveal overlay.
@@ -310,7 +309,7 @@ export function LiveConsoleView({
 
       <RevealDialog
         reveal={reveal}
-        team={revealedTeam}
+        teamName={revealedTeamName}
         onContinue={() => setReveal(null)}
       />
     </div>

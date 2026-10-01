@@ -2,7 +2,13 @@
 
 import { useEffect, useRef } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { CheckCircle2, HelpCircle, Trophy, XCircle } from "lucide-react";
+import {
+  CheckCircle2,
+  HelpCircle,
+  SkipForward,
+  Trophy,
+  XCircle,
+} from "lucide-react";
 import type { RevealInfo } from "@/features/live/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,7 +21,22 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "cn";
 
-type Team = { name: string; color: string } | null;
+/** Result kind driving the overlay: green correct, red wrong, orange skipped. */
+type RevealOutcome = "correct" | "wrong" | "skipped" | "unknown";
+
+const OUTCOMES: Record<RevealOutcome, string> = {
+  correct: "#22c55e", // green — always, whichever team answered it
+  wrong: "#ef4444", // red
+  skipped: "#f97316", // orange — time ran out, correct answer revealed
+  unknown: "#f59e0b", // amber — finalised without a recorded result
+};
+
+const TITLES: Record<RevealOutcome, string> = {
+  correct: "Correct answer",
+  wrong: "Wrong answer",
+  skipped: "Time's up — correct answer",
+  unknown: "No points awarded",
+};
 
 /** Spring entrance for the overlay content; instantly settled for reduced motion. */
 const SPRING = { type: "spring", bounce: 0.3, duration: 0.55 } as const;
@@ -71,7 +92,7 @@ function CountUp({
   return (
     <span
       ref={ref}
-      className="text-5xl font-black leading-none tabular-nums sm:text-6xl"
+      className="text-4xl font-black leading-none tabular-nums sm:text-5xl md:text-6xl"
       style={{ color }}
     >
       0
@@ -86,24 +107,27 @@ function CountUp({
  */
 export function RevealDialog({
   reveal,
-  team,
+  teamName,
   onContinue,
 }: {
   reveal: RevealInfo | null;
-  /** Winning team (name + color) when points were awarded; null otherwise. */
-  team: Team;
+  /** Team that earned points (name only) — accents come from the outcome. */
+  teamName: string | null;
   onContinue: () => void;
 }) {
   const spring = useSpring();
   return (
     <Dialog open={reveal !== null}>
-      <DialogContent showCloseButton={false} className="sm:max-w-xl">
+      <DialogContent
+        showCloseButton={false}
+        className="w-[calc(100vw-1.5rem)] max-h-[calc(100vh-1.5rem)] max-h-[calc(100dvh-1.5rem)] overflow-y-auto overscroll-contain sm:max-w-xl"
+      >
         {reveal && (
           <RevealBody
             // Remount per reveal so every entrance animation replays fresh.
             key={`${reveal.question.id}|${reveal.awardedTeamId}|${reveal.awardedPoints}`}
             reveal={reveal}
-            team={team}
+            teamName={teamName}
             onContinue={onContinue}
             spring={spring}
           />
@@ -115,24 +139,41 @@ export function RevealDialog({
 
 function RevealBody({
   reveal,
-  team,
+  teamName,
   onContinue,
   spring,
 }: {
   reveal: RevealInfo;
-  team: Team;
+  /** Name of the team that earned points, when any. */
+  teamName: string | null;
   onContinue: () => void;
   spring: object;
 }) {
-  const scored = reveal.awardedPoints > 0 && team !== null;
-  const tint = scored ? team.color : "#f59e0b";
-  const Icon = scored ? Trophy : reveal.primaryResult ? XCircle : HelpCircle;
+  const outcome: RevealOutcome =
+    reveal.primaryResult === "CORRECT" || reveal.awardedPoints > 0
+      ? "correct"
+      : reveal.primaryResult === "TIMEOUT"
+        ? "skipped"
+        : reveal.primaryResult === "WRONG"
+          ? "wrong"
+          : "unknown";
+  // The answer's outcome — not the team — drives every accent in this overlay.
+  const accent = OUTCOMES[outcome];
+  const scored = outcome === "correct" && teamName !== null;
+  const Icon =
+    outcome === "correct"
+      ? Trophy
+      : outcome === "wrong"
+        ? XCircle
+        : outcome === "skipped"
+          ? SkipForward
+          : HelpCircle;
 
   return (
     <div
       className="-m-4 flex flex-col gap-5 p-5 sm:p-6"
       style={{
-        backgroundImage: `radial-gradient(120% 90% at 50% -10%, ${tint}26, transparent 70%)`,
+        backgroundImage: `radial-gradient(120% 90% at 50% -10%, ${accent}26, transparent 70%)`,
       }}
     >
       {/* Result medallion */}
@@ -142,30 +183,30 @@ function RevealBody({
             <span
               aria-hidden
               className="absolute inset-0 animate-ping rounded-full opacity-60"
-              style={{ backgroundColor: `${tint}59` }}
+              style={{ backgroundColor: `${accent}59` }}
             />
           )}
           <motion.div
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={spring}
-            className="relative flex size-20 items-center justify-center rounded-full text-white"
+            className="relative flex size-16 items-center justify-center rounded-full text-white sm:size-20"
             style={{
-              backgroundImage: `linear-gradient(135deg, ${tint}, ${tint}b8)`,
-              boxShadow: `0 10px 34px -6px ${tint}99`,
+              backgroundImage: `linear-gradient(135deg, ${accent}, ${accent}b8)`,
+              boxShadow: `0 10px 34px -6px ${accent}99`,
             }}
           >
-            <Icon className="size-9" />
+            <Icon className="size-7 sm:size-9" />
           </motion.div>
         </div>
         <DialogHeader className="!gap-1.5">
           <DialogTitle
             className={cn(
-              "text-center text-2xl font-black tracking-tight sm:text-3xl"
+              "text-center text-xl font-black tracking-tight sm:text-2xl md:text-3xl"
             )}
-            style={scored ? { color: team.color } : undefined}
+            style={{ color: accent }}
           >
-            {scored ? "Correct answer" : "No points awarded"}
+            {TITLES[outcome]}
           </DialogTitle>
           <DialogDescription className="text-center text-base">
             {reveal.question.text}
@@ -185,8 +226,8 @@ function RevealBody({
         style={
           scored
             ? {
-                borderColor: `${team.color}66`,
-                backgroundColor: `${team.color}1f`,
+                borderColor: `${accent}66`,
+                backgroundColor: `${accent}1f`,
               }
             : undefined
         }
@@ -199,19 +240,19 @@ function RevealBody({
               </span>
               <span
                 className="truncate text-lg font-black"
-                style={{ color: team.color }}
+                style={{ color: accent }}
               >
-                {team.name}
+                {teamName}
               </span>
             </div>
             <div className="flex shrink-0 items-start gap-1">
               <span
                 className="pt-1 text-2xl font-black"
-                style={{ color: team.color }}
+                style={{ color: accent }}
               >
                 +
               </span>
-              <CountUp to={reveal.awardedPoints} color={team.color} delay={0.3} />
+              <CountUp to={reveal.awardedPoints} color={accent} delay={0.3} />
             </div>
           </>
         ) : (
@@ -220,9 +261,13 @@ function RevealBody({
               <CheckCircle2 className="size-5" />
             </span>
             <div className="min-w-0">
-              <p className="text-sm font-bold">The correct option is highlighted below</p>
+              <p className="text-sm font-bold">
+                The correct option is highlighted below
+              </p>
               <p className="text-xs text-muted-foreground">
-                Nobody banked points on this one.
+                {outcome === "skipped"
+                  ? "Time ran out — nobody banked points on this one."
+                  : "Nobody banked points on this one."}
               </p>
             </div>
           </div>
@@ -254,8 +299,8 @@ function RevealBody({
               style={
                 correct
                   ? {
-                      backgroundImage: `linear-gradient(135deg, ${tint}, ${tint}c0)`,
-                      boxShadow: `0 10px 28px -10px ${tint}99`,
+                      backgroundImage: `linear-gradient(135deg, ${accent}, ${accent}c0)`,
+                      boxShadow: `0 10px 28px -10px ${accent}99`,
                     }
                   : undefined
               }
@@ -294,7 +339,7 @@ function RevealBody({
           animate={{ opacity: 1 }}
           transition={{ ...spring, delay: 0.4 }}
           className="flex gap-3 rounded-xl border-l-4 bg-muted/60 px-4 py-3 text-sm leading-relaxed"
-          style={{ borderLeftColor: tint }}
+          style={{ borderLeftColor: accent }}
         >
           <div>
             <span className="font-bold uppercase tracking-widest text-muted-foreground text-[11px]">
@@ -309,15 +354,11 @@ function RevealBody({
         <Button
           size="lg"
           className="w-full sm:w-auto"
-          style={
-            scored
-              ? {
-                  backgroundColor: team.color,
-                  color: "#fff",
-                  boxShadow: `0 10px 24px -10px ${team.color}cc`,
-                }
-              : undefined
-          }
+          style={{
+            backgroundColor: accent,
+            color: "#fff",
+            boxShadow: `0 10px 24px -10px ${accent}cc`,
+          }}
           onClick={onContinue}
         >
           Continue
